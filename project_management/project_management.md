@@ -17,3 +17,8 @@ Our internal deadline of project: 22nd March 2021 (Week 5) to give buffer time i
 
 Key responsibilities
 ======================
+
+Tasks:
+======================
+
+1. Build a lexer and parser that can parse a basic function with no arguments, that does variable assignments and arithmetic expressions
