@@ -1,0 +1,19 @@
+Time/Project management
+=======================
+
+Start of project: 24th Feb 2021 (Week 1)
+
+Key modules: Lexer, Parser, Code Generator, Makefile, test script
+
+Week 1: Finish the basic requirements
+
+Week 2: Finish intermediate requirements
+
+Week 3: Test for intermediates funcitionality and design the advanced functionality
+
+Week 4: Finish intermediate requirements
+
+Our internal deadline of project: 22nd March 2021 (Week 5) to give buffer time in case any issues arises
+
+Key responsibilities
+======================
