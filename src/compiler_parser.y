@@ -65,7 +65,8 @@ FUNCTION : VAR_INT VARIABLE B_LBRACKET B_RBRACKET SCOPE     // need to do handle
 DECLARAION : VAR_DECLARATION    // variable declaration
            | FUNC_DECLARATION   // function declaration
 
-VAR_DECLARATION : KW_INT VARIABLE SEMI_COLON   // int x
+VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON   // int x
+                | VAR_TYPE NAME OP_EQUAL NUMBER     //int x=10;
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
