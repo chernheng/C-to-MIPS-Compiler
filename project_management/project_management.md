@@ -23,3 +23,6 @@ Tasks:
 
 1. Build a lexer and parser that can parse a basic function with no arguments, that does variable assignments and arithmetic expressions
     - As of 12am 27th Feb 2021, the progress is still building up the general components of the compiler
+    - As of 3am 27th Feb 2021, project milestone, AST works for the basic requirements
+
+2. Build the code generation for MIPS
