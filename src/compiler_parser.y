@@ -56,7 +56,7 @@ MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }    //int x
          | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }         //multiple lines
          | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
 
-FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE          {$$ = new Function($1,$2,$5);}   // definition  (no arguments)
+FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE      {$$ = new FunctionDef($1,$2,$5); }   // definition  (no arguments)
 
 COMMAND_SEQ : COMMAND               { $$ = new Command($1,nullptr); }
             | COMMAND COMMAND_SEQ   { $$ = new Command($1,$2); }
@@ -71,13 +71,13 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
 
-FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              {}   //call function (without storing return result) (no arguments)
+FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              { $$ = new Function($1); }   //call function (without storing return result) (no arguments)
 
-DECLARATION : VAR_DECLARATION        {}    // variable declaration
+DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
           //  | FUNC_DECLARATION       {}   // function declaration
 
-VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    {}     // int x
-                | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    {}     //int x=10;
+VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2); }     // int x
+                | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    { $$ = new DeclareVariable($1,$2,$4); }     //int x=10;
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
      | WHILE_LOOP SCOPE         { $$ = new WhileLoop($1,$2); }
@@ -99,13 +99,13 @@ STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 ASSIGNMENT : VARIABLE OP_EQUAL FUNCTION     { $$ = new AssignmentOperator($1,$3); }
            | VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
 
-CONDITION : FACTOR                          {}
-          | FACTOR COND_EQ FACTOR           {}
-          | FACTOR COND_NEQ FACTOR          {}
-          | FACTOR COND_GREQ FACTOR         {}
-          | FACTOR COND_LTEQ FACTOR         {}
-          | FACTOR COND_GR FACTOR           {}
-          | FACTOR COND_LT FACTOR           {}
+CONDITION : FACTOR                          { $$ = $1; }
+          | FACTOR COND_EQ FACTOR           { $$ = new EqualTo($1,$3); }
+          | FACTOR COND_NEQ FACTOR          { $$ = new NotEqual($1,$3); }
+          | FACTOR COND_GREQ FACTOR         { $$ = new GreaterEqual($1,$3); }
+          | FACTOR COND_LTEQ FACTOR         { $$ = new LessEqual($1,$3); }
+          | FACTOR COND_GR FACTOR           { $$ = new GreaterThan($1,$3); }
+          | FACTOR COND_LT FACTOR           { $$ = new LessThan($1,$3); }
 
 MATH : TERM  {$$ = $1;}
      | MATH OP_PLUS TERM      { $$ = new AddOperator($1, $3); }
