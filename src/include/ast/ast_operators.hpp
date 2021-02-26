@@ -109,6 +109,7 @@ class DerefOperator : public Operator {
         virtual void print(std::ostream &dst) const override    {
             dst<<"*";
             getLeft()->print(dst);
+            dst<<"DEREF";
         }
 };
 

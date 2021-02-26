@@ -22,7 +22,7 @@
 %token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR
-%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT
+%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC
 %token SEMI_COLON NAME NUMBER VAR_TYPE
 
 %type <string> NAME VAR_TYPE NUMBER
@@ -77,7 +77,7 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
           //  | FUNC_DECLARATION       {}   // function declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2); }     // int x
-                | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    { $$ = new DeclareVariable($1,$2,$4); }     //int x=10;
+                | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON    { $$ = new DeclareVariable($1,$2,$4); }     //int x=10;
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
      | WHILE_LOOP SCOPE         { $$ = new WhileLoop($1,$2); }
@@ -91,8 +91,8 @@ BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                { $$ = n
        | KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT ELSE_BLOCK     { $$ = new IfBlock($3,$5,$6); }
        | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE ELSE_BLOCK         { $$ = new IfBlock($3,$5,$6); }
 
-ELSE_BLOCK : KW_ELSE STATEMENT    { $$ = $2; }
-           | KW_ELSE SCOPE        { $$ = $2; }
+ELSE_BLOCK : KW_ELSE STATEMENT    { $$ = new ElseBlock($2); }
+           | KW_ELSE SCOPE        { $$ = new ElseBlock($2); }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
@@ -125,8 +125,8 @@ NEG : FACTOR        { $$ = $1; }
     | OP_MINUS FACTOR %prec MINUS {$$ = new NegOperator($2);}
     | OP_REF FACTOR %prec REF {$$ = new RefOperator($2);}
     | OP_TIMES FACTOR %prec DEREF {$$ = new DerefOperator($2);}
-    | FACTOR OP_PLUS OP_PLUS {$$ = new IncOperator($1);}
-    | FACTOR OP_MINUS OP_MINUS {$$ = new DecOperator($1);}
+    | FACTOR OP_INC {$$ = new IncOperator($1);}
+    | FACTOR OP_DEC {$$ = new DecOperator($1);}
 
 FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number

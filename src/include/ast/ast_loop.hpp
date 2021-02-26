@@ -29,9 +29,8 @@ class WhileLoop : public Loop {
         virtual void print(std::ostream &dst) const override    {
             dst<<"while(";
             getCondition()->print(dst);
-            dst<<") {"<<std::endl;
+            dst<<")"<<std::endl;
             getAction()->print(dst);
-            dst<<"}"<<std::endl;
         }
 };
 
@@ -42,9 +41,8 @@ class ForLoop : public Loop  {
         virtual void print(std::ostream &dst) const override    {
             dst<<"for(";
             getCondition()->print(dst);
-            dst<<") {"<<std::endl;
+            dst<<")"<<std::endl;
             getAction()->print(dst);
-            dst<<"}"<<std::endl;
         }
 };
 

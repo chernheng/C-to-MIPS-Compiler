@@ -43,6 +43,8 @@ for             { return KW_FOR;}
 [!~]            { return OP_NOT; }
 "<<"            { return OP_LSHIFT; }
 ">>"            { return OP_RSHIFT; }
+"++"            { return OP_INC;}
+"--"            { return OP_DEC;}
 
 [;]             { return SEMI_COLON;}
 
