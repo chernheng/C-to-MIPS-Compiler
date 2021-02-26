@@ -22,10 +22,10 @@ class Program {
         }
 };
 
-class Command : public Program {
+class Command : public Program { //each line of a program is a command, it is wrapper to make things into a linked list
     private:
-        ProgramPtr action;
-        ProgramPtr next=nullptr;
+        ProgramPtr action; //the code to be performed
+        ProgramPtr next=nullptr;//next element to the list
     public:
         Command(ProgramPtr _action, ProgramPtr _next) : action(_action), next(_next)    {}
 
@@ -53,7 +53,7 @@ class Scope : Program {
             delete action;
         }
 
-        virtual void print(std::ostream &dst) const override    {
+        virtual void print(std::ostream &dst) const override    { //dont need to include curly brackets in parser, does the frame pointer
             dst<<"{"<<std::endl;
             if(action!=nullptr) {
                 action->print(dst);

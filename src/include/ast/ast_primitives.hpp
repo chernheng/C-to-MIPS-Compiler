@@ -21,20 +21,26 @@ class Variable : public Program {
 class Array : public Program {
     private:
         std::string id;
-        std::string index;
+        ProgramPtr index;
     public:
-        Array(std::string _id, std::string _index) : id(_id), index(_index) {}
+        Array(std::string _id, ProgramPtr _index) : id(_id), index(_index) {}
+
+        ~Array() {
+            delete index;
+        }
 
         std::string getID() const {
             return id;
         }
 
-        std::string getIndex() const    {
+        ProgramPtr getIndex() const    {
             return index;
         }
 
         virtual void print(std::ostream &dst) const override    {
-            dst<<id<<"["<<index<<"]";
+            dst<<id<<"[";
+            index->print(dst);
+            dst<<"]";
         }
 };
 
@@ -49,7 +55,7 @@ class Number : public Program {
         }
 
         virtual void print(std::ostream &dst) const override    {
-            dst<<value;
+            dst<<getValue();
         }
 };
 

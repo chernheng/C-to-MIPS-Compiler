@@ -6,7 +6,7 @@
 class Loop : public Program {
     private:
         ProgramPtr condition;
-        ProgramPtr action;
+        ProgramPtr action; //is the scope of the loop, or just 1 line
     protected:
         Loop(ProgramPtr _condition, ProgramPtr _action) : condition(_condition), action(_action)    {}  
     public:
