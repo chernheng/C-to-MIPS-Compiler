@@ -29,7 +29,7 @@
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN
-%type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF //FUNC_DECLARATION
+%type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION
 %type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG
 
 
@@ -75,10 +75,12 @@ SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty
 FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              { $$ = new Function($1); }   //call function (without storing return result) (no arguments)
 
 DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
-          //  | FUNC_DECLARATION       {}   // function declaration
+           | FUNC_DECLARATION        { $$ = $1; }   // function declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2); }     // int x
-                | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON    { $$ = new DeclareVariable($1,$2,$4); }     //int x=10;
+                | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4); }     //int x=10;
+
+FUNC_DECLARATION : VAR_TYPE NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new DeclareFunction($1,$2); }
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
      | WHILE_LOOP SCOPE         { $$ = new WhileLoop($1,$2); }
