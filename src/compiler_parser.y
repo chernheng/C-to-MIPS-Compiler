@@ -25,19 +25,19 @@
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR
 %token SEMI_COLON
 
-%type <number> NUMBER
-%type <string> NAME VAR_TYPE
+%type <string> NAME VAR_TYPE NUMBER
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT
 %type <programPtr> DECLARAION VAR_DECLARATION FUNC_DECLARATION FUNCTION_DEF
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE
 
 //================================================================
 %token T_TIMES T_DIVIDE T_PLUS T_MINUS T_EXPONENT
 %token T_LOG T_EXP T_SQRT
 %token T_NUMBER T_VARIABLE
 
-%type <expr> EXPR TERM UNARY FACTOR
+%type <expr> EXPR TERM UNARY // FACTOR
 %type <number> T_NUMBER
 %type <string> T_VARIABLE T_LOG T_EXP T_SQRT FUNCTION_NAME
 
@@ -81,10 +81,32 @@ DECLARAION : VAR_DECLARATION        {}    // variable declaration
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    {}     // int x
                 | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    {}     //int x=10;
 
+LOOP : WHILE_LOOP STATEMENT     {}
+     | WHILE_LOOP SCOPE         {}
+    //  | FOR_LOOP STATEMENT       {}
+    //  | FOR_LOOP SCOPE           {}
+
+WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   {}
+
+BRANCH : 
+
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
 ASSIGNMENT : VARIABLE OP_EQUAL FUNCTION     { $$ = new AssignmentOperator($1,$3); }
            | VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
+
+CONDITION : FACTOR                          {}
+          | FACTOR COND_EQ FACTOR           {}
+          | FACTOR COND_NEQ FACTOR          {}
+          | FACTOR COND_GREQ FACTOR         {}
+          | FACTOR COND_LTEQ FACTOR         {}
+          | FACTOR COND_GR FACTOR           {}
+          | FACTOR COND_LT FACTOR           {}
+
+FACTOR : NAME     { $$ = new Variable($1); }    // variable
+       | NUMBER   { $$ = new Number($1); }      // number
+
+VARIABLE : NAME   { $$ = new Variable($1); }    // variable
 
 //======================================================================================================================         
 

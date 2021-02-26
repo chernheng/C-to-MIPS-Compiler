@@ -1,4 +1,3 @@
-  
 CPPFLAGS += -std=c++17 -W -Wall -g -Wno-unused-parameter
 CPPFLAGS += -I inc
 
