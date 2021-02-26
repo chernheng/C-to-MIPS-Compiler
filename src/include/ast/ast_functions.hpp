@@ -27,9 +27,7 @@ class Function : public Program {
 
         void print(std::ostream &dst) const override    {
             dst<<getType()<<" "<<getID()<<"() ";
-            dst<<"{"<<std::endl;
             getAction()->print(dst);
-            dst<<"}"<<std::endl;
         }
 };
 

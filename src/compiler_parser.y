@@ -56,7 +56,7 @@ MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }    //int x
          | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }         //multiple lines
          | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
 
-FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE          {}   // definition  (no arguments)
+FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE          {$$ = new Function($1,$2,$5);}   // definition  (no arguments)
 
 COMMAND_SEQ : COMMAND               { $$ = new Command($1,nullptr); }
             | COMMAND COMMAND_SEQ   { $$ = new Command($1,$2); }

@@ -7,7 +7,7 @@ extern "C" int fileno(FILE *stream);
 #include "compiler_parser.tab.hpp"
 %}
 
-Types [(int)(char)(float)(double)(void)]
+Types (int)|(char)|(float)|(double)|(void)
 
 %%
 {Types}         { yylval.string= new std::string(yytext); return VAR_TYPE;}
@@ -21,8 +21,8 @@ for             { return KW_FOR;}
 "}"             { return B_RCURLY;}
 "["             { return B_LSQUARE;}
 "]"             { return B_RSQUARE;}
-"("             { return B_LBRACKET; }
-")"             { return B_RBRACKET; }
+[\(]             { return B_LBRACKET; }
+[\)]             { return B_RBRACKET; }
 
 "<="              { return COND_LTEQ;}
 >=              { return COND_GREQ;}
