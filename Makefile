@@ -2,14 +2,17 @@
 CPPFLAGS += -std=c++17 -W -Wall -g -Wno-unused-parameter
 CPPFLAGS += -I inc
 
-bin/c_compiler : bin/compiler src/wrapper.sh
-	cp src/wrapper.sh bin/c_compiler
-	chmod u+x bin/c_compiler
+src/compiler_parser.tab.cpp src/compiler_parser.tab.hpp : src/compiler_parser.y
+	bison -v -d src/compiler_parser.y -o src/compiler_parser.tab.cpp
 
-bin/compiler : src/compiler.cpp
+src/compiler_lexer.yy.cpp : src/compiler_lexer.flex src/compiler_parser.tab.hpp
+	flex -o src/compiler_lexer.yy.cpp  src/compiler_lexer.flex
+
+bin/print_canonical : src/print_canonical.o src/compiler_parser.tab.o src/compiler_lexer.yy.o
 	mkdir -p bin
-	g++ $(CPPFLAGS) -o bin/compiler $^
+	g++ $(CPPFLAGS) -o bin/print_canonical $^
 	
 clean :
 	rm -f src/*.o
-	rm -f bin/*
+	rm src/*.tab.cpp
+	rm src/*.yy.cpp
