@@ -22,7 +22,7 @@
 %token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR
-%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR
+%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT
 %token SEMI_COLON
 
 %type <string> NAME VAR_TYPE NUMBER
@@ -30,18 +30,17 @@
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT
 %type <programPtr> DECLARAION VAR_DECLARATION FUNC_DECLARATION FUNCTION_DEF
-%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG BITWISE POINTER
 
-//================================================================
-%token T_TIMES T_DIVIDE T_PLUS T_MINUS T_EXPONENT
-%token T_LOG T_EXP T_SQRT
-%token T_NUMBER T_VARIABLE
-
-%type <expr> EXPR TERM UNARY // FACTOR
-%type <number> T_NUMBER
-%type <string> T_VARIABLE T_LOG T_EXP T_SQRT FUNCTION_NAME
 
 %start ROOT
+
+%left OP_OR
+%left OP_XOR
+%left OP_REF
+%left OP_LSHIFT OP_RSHIFT
+%left OP_PLUS OP_MINUS
+%right OP_NOT MINUS REF DEREF
 
 %%
 
@@ -85,7 +84,7 @@ LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
     //  | FOR_LOOP STATEMENT       {}
     //  | FOR_LOOP SCOPE           {}
 
-WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $1; }
+WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $3; }
 
 BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                { $$ = new IfBlock($3,$5,nullptr); }
        | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE                    { $$ = new IfBlock($3,$5,nullptr); }
@@ -108,43 +107,34 @@ CONDITION : FACTOR                          {}
           | FACTOR COND_GR FACTOR           {}
           | FACTOR COND_LT FACTOR           {}
 
-FACTOR : NAME     { $$ = new Variable($1); }    // variable
+MATH : TERM  {$$ = $1;}
+     | MATH OP_PLUS TERM      { $$ = new AddOperator($1, $3); }
+     | MATH OP_MINUS TERM  {$$ = new SubOperator($1, $3); }
+     | MATH OP_XOR TERM  {$$ = new BitXOROperator($1, $3); } // ^
+     | MATH OP_OR TERM  {$$ = new BitOROperator($1, $3); } // |
+     | MATH OP_REF TERM  {$$ = new BitANDOperator($1, $3); } // &
+     | MATH OP_LSHIFT TERM  {$$ = new LeftShiftOperator($1, $3); } 
+     | MATH OP_RSHIFT TERM  {$$ = new RightShiftOperator($1, $3); }
+
+TERM : NEG      { $$ = $1; }
+     | TERM OP_TIMES NEG          { $$ = new MulOperator($1, $3); }
+     | TERM OP_DIVIDE NEG          { $$ = new DivOperator($1, $3); }
+
+NEG : FACTOR        { $$ = $1; }
+    | OP_NOT FACTOR {$$ = new BitNOTOperator($2);}
+    | OP_MINUS FACTOR %prec MINUS {$$ = new NegOperator($2);}
+    | OP_REF FACTOR %prec REF {$$ = new RefOperator($2);}
+    | OP_TIMES FACTOR %prec DEREF {$$ = new DerefOperator($2);}
+    | FACTOR OP_PLUS OP_PLUS {$$ = new IncOperator($1);}
+    | FACTOR OP_MINUS OP_MINUS {$$ = new DecOperator($1);}
+
+FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number
+       | B_LBRACKET MATH B_RBRACKET { $$ = $2; }
+
 
 VARIABLE : NAME   { $$ = new Variable($1); }    // variable
 
-//======================================================================================================================         
-
-/* TODO-3 : Add support for (x + 6) and (10 - y). You'll need to add production rules, and create an AddOperator or
-            SubOperator. */
-EXPR : TERM  {$$ = $1;}
-     | EXPR T_PLUS TERM      { $$ = new AddOperator($1, $3); }
-     | EXPR T_MINUS TERM  {$$ = new SubOperator($1, $3); }
-
-/* TODO-4 : Add support (x * 6) and (z / 11). */
-TERM : UNARY      { $$ = $1; }
-     | TERM T_TIMES UNARY          { $$ = new MulOperator($1, $3); }
-     | TERM T_DIVIDE UNARY          { $$ = new DivOperator($1, $3); }
-
-/*  TODO-5 : Add support for (- 5) and (- x). You'll need to add production rules for the unary minus operator and create a NegOperator. */
-UNARY : FACTOR        { $$ = $1; }
-      | T_MINUS FACTOR {$$ = new NegOperator($2);}
-
-/* TODO-2 : Add a rule for variable, base on the pattern of number. */
-FACTOR : T_NUMBER     { $$ = new Number( $1 ); }
-       | B_LBRACKET EXPR B_RBRACKET { $$ = $2; }
-       | T_VARIABLE   {$$ = new Variable(*$1);}
-       | T_LOG B_LBRACKET EXPR B_RBRACKET {$$ = new LogFunction($3);}
-       | FACTOR T_EXPONENT UNARY {$$ = new ExpOperator($1,$3);}
-       | T_EXP B_LBRACKET EXPR B_RBRACKET {$$ = new ExpFunction($3);}
-       | T_SQRT B_LBRACKET EXPR B_RBRACKET {$$ = new SqrtFunction($3);}
-
-/* TODO-6 : Add support log(x), by modifying the rule for FACTOR. */
-
-/* TODO-7 : Extend support to other functions. Requires modifications here, and to FACTOR. */
-FUNCTION_NAME : T_LOG { $$ = new std::string("log"); }
-              | T_EXP { $$ = new std::string("exp");}
-              | T_SQRT { $$ = new std::string("sqrt");}
 
 %%
 
