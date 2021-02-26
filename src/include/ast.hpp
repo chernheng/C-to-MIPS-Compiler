@@ -11,6 +11,7 @@
 #include "ast/ast_operators.hpp"
 #include "ast/ast_functions.hpp"
 #include "ast/ast_declarations.hpp"
+#include "ast/ast_statements.hpp"
 
 struct varType {
     int byteSize; //number of bytes for each element

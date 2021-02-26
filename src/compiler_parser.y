@@ -19,7 +19,7 @@
   std::string *string;
 }
 
-%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE
+%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC
@@ -28,7 +28,7 @@
 %type <string> NAME VAR_TYPE NUMBER
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
-%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT
+%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF //FUNC_DECLARATION
 %type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG
 
@@ -65,6 +65,7 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
         | LOOP                      { $$ = $1; }
         | BRANCH                    { $$ = $1; }
         | STATEMENT                 { $$ = $1; }
+        | FLOW                      { $$ = $1; }
         | FUNCTION                  { $$ = $1; }
         | SCOPE                     { $$ = $1; }
 
@@ -93,6 +94,13 @@ BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                { $$ = n
 
 ELSE_BLOCK : KW_ELSE STATEMENT    { $$ = new ElseBlock($2); }
            | KW_ELSE SCOPE        { $$ = new ElseBlock($2); }
+
+FLOW : RETN                       { $$ = $1; }
+     | KW_BREAK                   { $$ = new BreakStatement(); }
+     | KW_CONTINUE                { $$ = new ContinueStatement(); }
+
+RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
+     | KW_RETURN STATEMENT        { $$ = new ReturnStatement($2); }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 

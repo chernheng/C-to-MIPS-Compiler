@@ -16,6 +16,9 @@ if              { return KW_IF;}
 else            { return KW_ELSE;}
 while           { return KW_WHILE;}  
 for             { return KW_FOR;} 
+return          { return KW_RETURN;}
+break           { return KW_BREAK;}
+continue        { return KW_CONTINUE;}
 
 "{"             { return B_LCURLY;}
 "}"             { return B_RCURLY;}
