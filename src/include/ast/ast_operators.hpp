@@ -139,7 +139,7 @@ class BitXOROperator : public Operator {
         BitXOROperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
 };
 
-class BitNOTOperator : Operator {
+class BitNOTOperator : public Operator {
     protected:
         virtual const char *getOpcode() const override    {
             return "~";
@@ -153,7 +153,7 @@ class BitNOTOperator : Operator {
         }
 };
 
-class NegOperator : Operator {
+class NegOperator : public Operator {
     protected:
         virtual const char *getOpcode() const override    {
             return "-";

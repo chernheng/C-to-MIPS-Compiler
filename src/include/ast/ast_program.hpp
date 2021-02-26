@@ -43,7 +43,7 @@ class Command : public Program { //each line of a program is a command, it is wr
         }
 };
 
-class Scope : Program {
+class Scope : public Program {
     private:
         ProgramPtr action=nullptr;
     public:

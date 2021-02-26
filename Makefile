@@ -16,4 +16,7 @@ bin/print_check : src/print_check.o src/compiler_parser.tab.o src/compiler_lexer
 clean :
 	rm -f src/*.o
 	rm src/*.tab.cpp
+	rm src/*.tab.hpp
+	rm src/*.output
 	rm src/*.yy.cpp
+	rm bin/*

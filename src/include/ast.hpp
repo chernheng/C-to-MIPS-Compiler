@@ -24,7 +24,7 @@ union TokenValue{
     std::string *string;
 };
 
-extern TokenValue yylval;
+// extern TokenValue yylval;
 extern const Program *parseAST();
 
 

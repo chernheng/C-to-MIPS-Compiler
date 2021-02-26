@@ -21,23 +21,23 @@ for             { return KW_FOR;}
 "}"             { return B_RCURLY;}
 "["             { return B_LSQUARE;}
 "]"             { return B_RSQUARE;}
-[(]             { return B_LBRACKET; }
-[)]             { return B_RBRACKET; }
+"("             { return B_LBRACKET; }
+")"             { return B_RBRACKET; }
 
-<=              { return COND_LTEQ;}
+"<="              { return COND_LTEQ;}
 >=              { return COND_GREQ;}
 ==              { return COND_EQ;}
 !=              { return COND_NEQ;}
 [<]             { return COND_LT;}
 [>]             { return COND_GR;}
 
-=               { return OP_EQUAL;}
+[=]               { return OP_EQUAL;}
 [*]             { return OP_TIMES; }
 [+]             { return OP_PLUS; }
 [\^]            { return OP_XOR; }
 [-]             { return OP_MINUS; }
 [\/]            { return OP_DIVIDE; }
-[%]             { return OP_MODULO}
+[%]             { return OP_MODULO;}
 [&]             { return OP_REF; }
 [|]             { return OP_OR; }
 [!~]            { return OP_NOT; }

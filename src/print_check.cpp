@@ -7,5 +7,7 @@ int main()
     ast->print(std::cout);
     std::cout<<std::endl;
 
+    delete ast;
+
     return 0;
 }

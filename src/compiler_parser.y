@@ -2,7 +2,7 @@
   #include "include/ast.hpp"
   #include <cassert>
 
-  extern const Expression *g_root; // A way of getting the AST out
+  extern const Program *g_root; // A way of getting the AST out
 
   //! This is to fix problems when generating C++
   // We are declaring the functions provided by Flex, so
@@ -23,14 +23,14 @@
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT
-%token SEMI_COLON
+%token SEMI_COLON NAME NUMBER VAR_TYPE
 
 %type <string> NAME VAR_TYPE NUMBER
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT
-%type <programPtr> DECLARAION VAR_DECLARATION FUNC_DECLARATION FUNCTION_DEF
-%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG BITWISE POINTER
+%type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF //FUNC_DECLARATION
+%type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG
 
 
 %start ROOT
@@ -73,8 +73,8 @@ SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty
 
 FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              {}   //call function (without storing return result) (no arguments)
 
-DECLARAION : VAR_DECLARATION        {}    // variable declaration
-           | FUNC_DECLARATION       {}   // function declaration
+DECLARATION : VAR_DECLARATION        {}    // variable declaration
+          //  | FUNC_DECLARATION       {}   // function declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    {}     // int x
                 | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    {}     //int x=10;
