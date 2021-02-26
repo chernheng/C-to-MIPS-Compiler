@@ -144,14 +144,74 @@ class BitXOROperator : public Operator {
 class BitNOTOperator : Operator {
     protected:
         virtual const char *getOpcode() const override    {
-            return "!";
+            return "~";
         }  
     public:
         BitNOTOperator(ProgramPtr _left) : Operator(_left,nullptr)  {}
 
         virtual void print(std::ostream &dst) const override    {
-            dst<<"!";
+            dst<<"~";
             getLeft()->print(dst);
+        }
+};
+
+class NegOperator : Operator {
+    protected:
+        virtual const char *getOpcode() const override    {
+            return "-";
+        }  
+    public:
+        NegOperator(ProgramPtr _left) : Operator(_left,nullptr)  {}
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"-";
+            getLeft()->print(dst);
+        }
+};
+
+class LeftShiftOperator : public Operator {
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "<<";
+        }
+    public:
+        LeftShiftOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
+};
+
+class RightShiftOperator : public Operator {
+    protected:
+        virtual const char *getOpcode() const override  {
+            return ">>";
+        }
+    public:
+        RightShiftOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+};
+
+class IncOperator : public Operator {
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "++";
+        }  
+    public:
+        IncOperator(ProgramPtr _left) : Operator(_left,nullptr) {}
+
+        virtual void print(std::ostream &dst) const override    {
+            getLeft()->print(dst);
+            dst<<"++";
+        }
+};
+
+class DecOperator : public Operator {
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "--";
+        }  
+    public:
+        DecOperator(ProgramPtr _left) : Operator(_left,nullptr) {}
+
+        virtual void print(std::ostream &dst) const override    {
+            getLeft()->print(dst);
+            dst<<"--";
         }
 };
 

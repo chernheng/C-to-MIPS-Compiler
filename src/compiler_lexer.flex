@@ -40,6 +40,9 @@ for             { return KW_FOR;}
 [%]             { return OP_MODULO}
 [&]             { return OP_REF; }
 [|]             { return OP_OR; }
+[!~]            { return OP_NOT; }
+"<<"            { return OP_LSHIFT; }
+">>"            { return OP_RSHIFT; }
 
 [;]             { return SEMI_COLON;}
 
