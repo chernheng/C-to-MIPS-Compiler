@@ -30,7 +30,7 @@
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT
 %type <programPtr> DECLARAION VAR_DECLARATION FUNC_DECLARATION FUNCTION_DEF
-%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK
 
 //================================================================
 %token T_TIMES T_DIVIDE T_PLUS T_MINUS T_EXPONENT
@@ -73,7 +73,6 @@ SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
 
 FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              {}   //call function (without storing return result) (no arguments)
-         | VARIABLE NAME B_LBRACKET B_RBRACKET SEMI_COLON     {}   //call function (no arguments)
 
 DECLARAION : VAR_DECLARATION        {}    // variable declaration
            | FUNC_DECLARATION       {}   // function declaration
@@ -81,14 +80,20 @@ DECLARAION : VAR_DECLARATION        {}    // variable declaration
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    {}     // int x
                 | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    {}     //int x=10;
 
-LOOP : WHILE_LOOP STATEMENT     {}
-     | WHILE_LOOP SCOPE         {}
+LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
+     | WHILE_LOOP SCOPE         { $$ = new WhileLoop($1,$2); }
     //  | FOR_LOOP STATEMENT       {}
     //  | FOR_LOOP SCOPE           {}
 
-WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   {}
+WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $1; }
 
-BRANCH : 
+BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                { $$ = new IfBlock($3,$5,nullptr); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE                    { $$ = new IfBlock($3,$5,nullptr); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT ELSE_BLOCK     { $$ = new IfBlock($3,$5,$6); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE ELSE_BLOCK         { $$ = new IfBlock($3,$5,$6); }
+
+ELSE_BLOCK : KW_ELSE STATEMENT    { $$ = $2; }
+           | KW_ELSE SCOPE        { $$ = $2; }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
