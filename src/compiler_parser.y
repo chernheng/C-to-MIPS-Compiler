@@ -52,10 +52,12 @@
 
 ROOT : MAIN_SEQ { g_root = $1; }
 
-MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }
-         | FUNCTION_DEF             { $$ = new Command($1,nullptr); }
-         | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }
+MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }    //int x; int f();
+         | FUNCTION_DEF             { $$ = new Command($1,nullptr); }    //int f() { stmt }
+         | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }         //multiple lines
          | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
+
+FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE          {}   // definition  (no arguments)
 
 COMMAND_SEQ : COMMAND               { $$ = new Command($1,nullptr); }
             | COMMAND COMMAND_SEQ   { $$ = new Command($1,$2); }
@@ -72,7 +74,6 @@ SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty
 
 FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              {}   //call function (without storing return result) (no arguments)
          | VARIABLE NAME B_LBRACKET B_RBRACKET SEMI_COLON     {}   //call function (no arguments)
-         | VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE          {}   // definition  (no arguments)
 
 DECLARAION : VAR_DECLARATION        {}    // variable declaration
            | FUNC_DECLARATION       {}   // function declaration
