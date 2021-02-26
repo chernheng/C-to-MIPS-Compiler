@@ -1,8 +1,6 @@
 #ifndef COMPILER_AST_DECLARATIONS_HPP
 #define COMPILER_AST_DECLARATIONS_HPP
 
-#include "src/include/ast.hpp"
-
 class DeclareVariable : public Program {
     private:
         std::string type;

@@ -1,8 +1,6 @@
 #ifndef COMPILER_AST_BRANCHES_HPP
 #define COMPILER_AST_BRANCHES_HPP
 
-#include "src/include/ast.hpp"
-
 class Branch : public Program {
     private:
         ProgramPtr action=nullptr;

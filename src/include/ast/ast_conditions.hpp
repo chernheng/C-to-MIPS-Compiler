@@ -1,8 +1,6 @@
 #ifndef COMPILER_AST_CONDITIONS_HPP
 #define COMPILER_AST_CONDITIONS_HPP
 
-#include "src/include/ast.hpp"
-
 class Condition : public Program {
     private:
         ProgramPtr a;

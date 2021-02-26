@@ -1,8 +1,6 @@
 #ifndef COMPILER_AST_OPERATORS_HPP
 #define COMPILER_AST_OPERATORS_HPP
 
-#include "src/include/ast.hpp"
-
 class Operator : public Program {
     private:
         ProgramPtr left;

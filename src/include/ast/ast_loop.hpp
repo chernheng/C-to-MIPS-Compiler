@@ -1,8 +1,6 @@
 #ifndef COMPILER_AST_LOOP_HPP
 #define COMPILER_AST_LOOP_HPP
 
-#include "src/include/ast.hpp"
-
 class Loop : public Program {
     private:
         ProgramPtr condition;

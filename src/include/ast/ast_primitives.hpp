@@ -1,8 +1,6 @@
 #ifndef COMPILER_AST_PRIMITIVES_HPP
 #define COMPILER_AST_PRIMITIVES_HPP
 
-#include "src/include/ast.hpp"
-
 class Variable : public Program {
     private:
         std::string id;
