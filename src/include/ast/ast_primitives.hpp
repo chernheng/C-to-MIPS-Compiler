@@ -5,36 +5,36 @@
 
 class Variable : public Program {
     private:
-        std::string *id;
+        std::string id;
     public:
-        Variable(std::string *_id) : id(_id) {}
-
-        ~Variable() {
-            delete id;
+        Variable(std::string *_id) : id(*_id) {
+            delete _id;
         }
 
         std::string getID() const   {
-            return *id;
+            return id;
         }
 
         virtual void print(std::ostream &dst) const override    {
-            dst<<*id;
+            dst<<id;
         }
 };
 
 class Array : public Program {
     private:
-        std::string *id;
+        std::string id;
         ProgramPtr index;
     public:
-        Array(std::string *_id, ProgramPtr _index) : id(_id), index(_index) {}
+        Array(std::string *_id, ProgramPtr _index) : id(*_id), index(_index) {
+            delete _id;
+        }
 
         ~Array() {
             delete index;
         }
 
         std::string getID() const {
-            return *id;
+            return id;
         }
 
         ProgramPtr getIndex() const    {
@@ -50,16 +50,14 @@ class Array : public Program {
 
 class Number : public Program {
     private:
-        std::string *value;
+        std::string value;
     public:
-        Number(std::string *_value) : value(_value)  {}
-
-        ~Number() {
-            delete value;
+        Number(std::string *_value) : value(*_value)  {
+            delete _value;
         }
 
         std::string getValue() const    {
-            return *value;
+            return value;
         }
 
         virtual void print(std::ostream &dst) const override    {

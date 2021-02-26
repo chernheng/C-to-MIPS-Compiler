@@ -5,16 +5,14 @@
 
 class Function : public Program {
     private:
-        std::string *type; // return type of function
-        std::string *id; // name of function
+        std::string type; // return type of function
+        std::string id; // name of function
         ProgramPtr action; //the scope of the function
     public:
-        Function(std::string *_type, std::string *_id, ProgramPtr _action) : type(_type), id(_id), action(_action)    {}  
+        Function(std::string *_type, std::string *_id, ProgramPtr _action) : type(*_type), id(*_id), action(_action)    {}  
     public:
         ~Function() {
             delete action;
-            delete id;
-            delete type;
         }
 
         ProgramPtr getAction() const    {
@@ -22,11 +20,11 @@ class Function : public Program {
         }
 
         std::string getID() const    {
-            return *id;
+            return id;
         }
 
         std::string getType() const    {
-            return *type;
+            return type;
         }
 
         void print(std::ostream &dst) const override    {

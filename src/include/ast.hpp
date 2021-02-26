@@ -25,6 +25,8 @@ union TokenValue{
 };
 
 extern TokenValue yylval;
+extern const Program *parseAST();
+
 
 #endif
 /*
