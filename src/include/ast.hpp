@@ -20,8 +20,8 @@ struct varType {
 };
 
 union TokenValue{
-    double numberValue;
-    std::string wordValue;
+    double number;
+    std::string *string;
 };
 
 extern TokenValue yylval;
