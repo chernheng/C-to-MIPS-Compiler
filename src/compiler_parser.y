@@ -14,13 +14,26 @@
 // Represents the value associated with any kind of
 // AST node.
 %union{
-  const Expression *expr;
+  const Program *programPtr;
   double number;
   std::string *string;
 }
 
+%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE
+%token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
+%token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR
+%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR
+%token SEMI_COLON
+
+%type <number> NUMBER
+%type <string> NAME VAR_TYPE
+
+%type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
+%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT
+%type <programPtr> DECLARAION VAR_DECLARATION FUNC_DECLARATION FUNCTION_DEF
+
+//================================================================
 %token T_TIMES T_DIVIDE T_PLUS T_MINUS T_EXPONENT
-%token B_LBRACKET B_RBRACKET
 %token T_LOG T_EXP T_SQRT
 %token T_NUMBER T_VARIABLE
 
@@ -37,14 +50,12 @@
     lines of code. "Command" is defined in ast_program.hpp (under includes/ast)
 */
 
-ROOT : PROGRAM { g_root = $1; }
-
-PROGRAM : MAIN_SEQ   { $$ = $1; }
+ROOT : MAIN_SEQ { g_root = $1; }
 
 MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }
-         | FUNCTION                 { $$ = new Command($1,nullptr); }
+         | FUNCTION_DEF             { $$ = new Command($1,nullptr); }
          | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }
-         | FUNCTION MAIN_SEQ        { $$ = new Command($1,$2); }
+         | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
 
 COMMAND_SEQ : COMMAND               { $$ = new Command($1,nullptr); }
             | COMMAND COMMAND_SEQ   { $$ = new Command($1,$2); }
@@ -59,14 +70,15 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
 
-FUNCTION : VAR_INT VARIABLE B_LBRACKET B_RBRACKET SCOPE     // need to do handle for functions 
-         | VARIABLE B_LBRACKET B_RBRACKET   // need to handle arguments
+FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              {}   //call function (without storing return result) (no arguments)
+         | VARIABLE NAME B_LBRACKET B_RBRACKET SEMI_COLON     {}   //call function (no arguments)
+         | VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE          {}   // definition  (no arguments)
 
-DECLARAION : VAR_DECLARATION    // variable declaration
-           | FUNC_DECLARATION   // function declaration
+DECLARAION : VAR_DECLARATION        {}    // variable declaration
+           | FUNC_DECLARATION       {}   // function declaration
 
-VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON   // int x
-                | VAR_TYPE NAME OP_EQUAL NUMBER     //int x=10;
+VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    {}     // int x
+                | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    {}     //int x=10;
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
@@ -108,9 +120,9 @@ FUNCTION_NAME : T_LOG { $$ = new std::string("log"); }
 
 %%
 
-const Expression *g_root; // Definition of variable (to match declaration earlier)
+const Program *g_root; // Definition of variable (to match declaration earlier)
 
-const Expression *parseAST()
+const Program *parseAST()
 {
   g_root=0;
   yyparse();
