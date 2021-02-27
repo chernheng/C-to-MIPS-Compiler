@@ -86,7 +86,7 @@ class Scope : public Program {
                 long finalStackSize=context->stack.size;
                 long delta = finalStackSize - initStackSize;
                 if(delta!=0)    {
-                    file<<"addiu $sp, $sp, 4"<<std::endl;    // shift down the stack pointer (always move sp by 4 to maintain word alignment)
+                    file<<"addiu $sp, $sp, "<<delta<<std::endl;    // shift down the stack pointer (always move sp by 4 to maintain word alignment)
                 }
                 context->stack.size=initStackSize;
                 context->stack.lut.pop_back();
