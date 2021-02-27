@@ -32,9 +32,9 @@ class Variable : public Program {
         virtual std::string getVarType(Context &context) const override {
             std::unordered_map<std::string,varInfo>::iterator it;
             int n=context.stack.lut.size()-1;
-            for(int i=n;i>=0;i--)   {
+            for(int i=n;i>=0;i--)   { //iterating through the vector of maps from the last map as it is the latest scope
                 it=context.stack.lut.at(i).find(getID());
-                if(it!=context.stack.lut.at(i).end()) {
+                if(it!=context.stack.lut.at(i).end()) { // iterating through each map, and if cant be found, move on ot next map
                     break;
                 }
             }
