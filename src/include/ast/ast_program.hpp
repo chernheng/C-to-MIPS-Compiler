@@ -48,6 +48,10 @@ class Command : public Program { //each line of a program is a command, it is wr
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override {
+            if(context.stack.lut.size()==0) {
+                std::unordered_map<std::string,varInfo> tmp;
+                context.stack.lut.push_back(tmp);
+            }
             action->generate(file, destReg, context);
             if(next!=nullptr)   {
                 next->generate(file, destReg, context);
