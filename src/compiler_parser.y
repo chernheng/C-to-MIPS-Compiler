@@ -30,7 +30,7 @@
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION
-%type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG
+%type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT
 
 
 %start ROOT
@@ -97,38 +97,42 @@ BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                { $$ = n
 ELSE_BLOCK : KW_ELSE STATEMENT    { $$ = new ElseBlock($2); }
            | KW_ELSE SCOPE        { $$ = new ElseBlock($2); }
 
-FLOW : RETN                       { $$ = $1; }
-     | KW_BREAK                   { $$ = new BreakStatement(); }
-     | KW_CONTINUE                { $$ = new ContinueStatement(); }
+FLOW : RETN SEMI_COLON                       { $$ = $1; }
+     | KW_BREAK SEMI_COLON                   { $$ = new BreakStatement(); }
+     | KW_CONTINUE SEMI_COLON                { $$ = new ContinueStatement(); }
 
-RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
-     | KW_RETURN STATEMENT        { $$ = new ReturnStatement($2); }
+RETN : KW_RETURN SEMI_COLON                  { $$ = new ReturnStatement(); }
+     | KW_RETURN MATH SEMI_COLON        { $$ = new ReturnStatement($2); }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
 ASSIGNMENT : VARIABLE OP_EQUAL FUNCTION     { $$ = new AssignmentOperator($1,$3); }
            | VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
 
-CONDITION : FACTOR                          { $$ = $1; }
-          | FACTOR COND_EQ FACTOR           { $$ = new EqualTo($1,$3); }
-          | FACTOR COND_NEQ FACTOR          { $$ = new NotEqual($1,$3); }
-          | FACTOR COND_GREQ FACTOR         { $$ = new GreaterEqual($1,$3); }
-          | FACTOR COND_LTEQ FACTOR         { $$ = new LessEqual($1,$3); }
-          | FACTOR COND_GR FACTOR           { $$ = new GreaterThan($1,$3); }
-          | FACTOR COND_LT FACTOR           { $$ = new LessThan($1,$3); }
 
-MATH : TERM  {$$ = $1;}
-     | MATH OP_PLUS TERM      { $$ = new AddOperator($1, $3); }
-     | MATH OP_MINUS TERM  {$$ = new SubOperator($1, $3); }
-     | MATH OP_XOR TERM  {$$ = new BitXOROperator($1, $3); } // ^
-     | MATH OP_OR TERM  {$$ = new BitOROperator($1, $3); } // |
-     | MATH OP_REF TERM  {$$ = new BitANDOperator($1, $3); } // &
-     | MATH OP_LSHIFT TERM  {$$ = new LeftShiftOperator($1, $3); } 
-     | MATH OP_RSHIFT TERM  {$$ = new RightShiftOperator($1, $3); }
+MATH : CONDITION  {$$ = $1;}
+     | MATH OP_XOR CONDITION  {$$ = new BitXOROperator($1, $3); } // ^
+     | MATH OP_OR CONDITION  {$$ = new BitOROperator($1, $3); } // |
+     | MATH OP_REF CONDITION  {$$ = new BitANDOperator($1, $3); } // &
+
+CONDITION : ADDSHIFT                          { $$ = $1; }
+          | CONDITION COND_EQ ADDSHIFT           { $$ = new EqualTo($1,$3); }
+          | CONDITION COND_NEQ ADDSHIFT          { $$ = new NotEqual($1,$3); }
+          | CONDITION COND_GREQ ADDSHIFT         { $$ = new GreaterEqual($1,$3); }
+          | CONDITION COND_LTEQ ADDSHIFT         { $$ = new LessEqual($1,$3); }
+          | CONDITION COND_GR ADDSHIFT           { $$ = new GreaterThan($1,$3); }
+          | CONDITION COND_LT ADDSHIFT           { $$ = new LessThan($1,$3); }
+
+ADDSHIFT : TERM  {$$ = $1;}
+     | ADDSHIFT OP_PLUS TERM      { $$ = new AddOperator($1, $3); }
+     | ADDSHIFT OP_MINUS TERM  {$$ = new SubOperator($1, $3); }
+     | ADDSHIFT OP_LSHIFT TERM  {$$ = new LeftShiftOperator($1, $3); } 
+     | ADDSHIFT OP_RSHIFT TERM  {$$ = new RightShiftOperator($1, $3); }
 
 TERM : NEG      { $$ = $1; }
      | TERM OP_TIMES NEG          { $$ = new MulOperator($1, $3); }
-     | TERM OP_DIVIDE NEG          { $$ = new DivOperator($1, $3); }
+     | TERM OP_DIVIDE NEG         { $$ = new DivOperator($1, $3); }
+     | TERM OP_MODULO NEG         { $$ = new ModuloOperator($1, $3);}
 
 NEG : FACTOR        { $$ = $1; }
     | OP_NOT FACTOR {$$ = new BitNOTOperator($2);}
