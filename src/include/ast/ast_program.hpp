@@ -1,11 +1,8 @@
 #ifndef COMPILER_AST_PROGRAM_HPP
 #define COMPILER_AST_PROGRAM_HPP
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <map>
-#include <memory>
+// #include "src/include/ast.hpp"
+#include "variable_table.hpp"
 
 class Program;
 typedef const Program *ProgramPtr;
@@ -14,10 +11,18 @@ class Program {
     public:
         virtual ~Program()  {};
 
+        virtual long getOffset(Context &context) const  {   // for assigning to variables
+            return 0;
+        }
+
+        virtual std::string getVarType(Context &context) const  {   // for assigning to variables
+            return "";
+        }
+
         virtual void print(std::ostream &dst) const =0;
         
-        // Implement generate function to generate IR code
-        virtual void generate(std::ofstream &dst, std::string destReg, const std::map<std::string,long> &bindings) const   {     // consider changing bindings to a struct containing the var and fn LUTs
+        // Implement generate function to generate code
+        virtual void generate(std::ofstream &file, const char*destReg, Context &context) const   {     // consider changing bindings to a struct containing the var and fn LUTs
             throw std::runtime_error("Not yet implemented"); 
         }
 };
@@ -41,6 +46,13 @@ class Command : public Program { //each line of a program is a command, it is wr
                 next->print(dst);
             }
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override {
+            action->generate(file, destReg, context);
+            if(next!=nullptr)   {
+                next->generate(file, destReg, context);
+            }
+        }
 };
 
 class Scope : public Program {
@@ -59,6 +71,22 @@ class Scope : public Program {
                 action->print(dst);
             }
             dst<<std::endl<<"}"<<std::endl;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override {
+            if(action!=nullptr) {
+                std::unordered_map<std::string,varInfo> tmp;
+                long initStackSize = context.stack.size;
+                context.stack.lut.push_back(tmp);
+                action->generate(file, destReg, context);
+                long finalStackSize=context.stack.size;
+                long delta = finalStackSize - initStackSize;
+                if(delta!=0)    {
+                    file<<"addiu $sp, $sp, 4"<<std::endl;    // shift down the stack pointer (always move sp by 4 to maintain word alignment)
+                }
+                context.stack.size=initStackSize;
+                context.stack.lut.pop_back();
+            }            
         }
 };
 

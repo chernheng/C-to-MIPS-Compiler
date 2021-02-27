@@ -1,6 +1,9 @@
 #ifndef COMPILER_AST_DECLARATIONS_HPP
 #define COMPILER_AST_DECLARATIONS_HPP
 
+// #include "src/include/ast.hpp"
+#include "variable_table.hpp"
+
 class DeclareVariable : public Program {
     private:
         std::string type;
@@ -21,6 +24,14 @@ class DeclareVariable : public Program {
             delete init;
         }
 
+        std::string getID() const   {
+            return id;
+        }
+
+        std::string getType() const {
+            return type;
+        }
+
         virtual void print(std::ostream &dst) const override    {
             dst<<type<<" "<<id;
             if(init!=nullptr)    {
@@ -28,6 +39,37 @@ class DeclareVariable : public Program {
                 init->print(dst);
             }
             dst<<";";
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override {
+            long offset = context.stack.size;
+            varInfo vf;
+            vf.offset=offset;
+            vf.length=1;
+            int stackInc=0;
+            if(getType()=="int")    {
+                vf.type="int";
+                vf.numBytes=4;
+                stackInc=4;
+            }
+            else if(getType()=="char")  {
+                vf.type="char";
+                vf.numBytes=1;
+                stackInc=1;
+            }
+            context.stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
+            if(init!=nullptr)   {
+                init->generate(file, "$t7", context);
+                if(stackInc==4) {
+                    file<<"sw $t7, 0($sp)"<<std::endl;
+                }
+                else if(stackInc==1)    {
+                    file<<"sb $t7, 0($sp)"<<std::endl;
+                }
+            }
+            file<<"addiu $sp, $sp, -4"<<std::endl;     // bring $sp to top of stack (always move by 4 bytes to maintain word alignment)
+            context.stack.size+=4;
+            file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
         }
 };
 
