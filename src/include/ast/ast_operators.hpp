@@ -64,11 +64,13 @@ class AddOperator : public Operator {
 
         virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override    {
             getLeft()->generate(file, "$t1", context);
-            file<<"addiu $sp, $sp, -4"<<std::endl;
+            file<<"addiu $sp, $sp, -4"<<std::endl; //decrement stack pointer to store a value
+            context.stack.size+=4;
             file<<"sw $t1, 4($sp)"<<std::endl;
             getRight()->generate(file, "$t2", context);
             file<<"lw $t1, 4($sp)"<<std::endl;
             file<<"addiu $sp, $sp, 4"<<std::endl;
+            context.stack.size-=4;
             file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
         }
 };
@@ -84,10 +86,12 @@ class SubOperator : public Operator {
         virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override    {
             getLeft()->generate(file, "$t1", context);
             file<<"addiu $sp, $sp, -4"<<std::endl;
+            context.stack.size+=4;
             file<<"sw $t1, 4($sp)"<<std::endl;
             getRight()->generate(file, "$t2", context);
             file<<"lw $t1, 4($sp)"<<std::endl;
             file<<"addiu $sp, $sp, 4"<<std::endl;
+            context.stack.size-=4;
             file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
         }
 };
