@@ -1,6 +1,8 @@
 #ifndef COMPILER_AST_OPERATORS_HPP
 #define COMPILER_AST_OPERATORS_HPP
 
+#include "variable_table.hpp"
+
 class Operator : public Program {
     private:
         ProgramPtr left;
@@ -37,6 +39,19 @@ class AssignmentOperator : public Operator {
         }
     public:
         AssignmentOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override    {
+            long offset=getLeft()->getOffset(context);
+            std::string t=getLeft()->getVarType(context);
+            getRight()->generate(file, "$t0", context);
+            if(t=="int")    {
+                file<<"sw $t0, "<<offset<<"($sp)"<<std::endl;
+            }
+            else if(t=="char")  {
+                file<<"sb $t0, "<<offset<<"($sp)"<<std::endl;
+            }
+            file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
+        }
 };
 
 class AddOperator : public Operator {
@@ -46,6 +61,16 @@ class AddOperator : public Operator {
         }
     public:
         AddOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            file<<"addiu $sp, $sp, -4"<<std::endl;
+            file<<"sw $t1, 4($sp)"<<std::endl;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, 4($sp)"<<std::endl;
+            file<<"addiu $sp, $sp, 4"<<std::endl;
+            file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+        }
 };
 
 class SubOperator : public Operator {
@@ -55,6 +80,16 @@ class SubOperator : public Operator {
         }
     public:
         SubOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)  {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            file<<"addiu $sp, $sp, -4"<<std::endl;
+            file<<"sw $t1, 4($sp)"<<std::endl;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, 4($sp)"<<std::endl;
+            file<<"addiu $sp, $sp, 4"<<std::endl;
+            file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+        }
 };
 
 class MulOperator : public Operator {

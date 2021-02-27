@@ -1,6 +1,7 @@
 #ifndef COMPILER_AST_INCLUDES_HPP
 #define COMPILER_AST_INCLUDES_HPP
 
+#include <iostream>
 #include <string>
 
 #include "ast/ast_program.hpp"
@@ -33,7 +34,7 @@ extern const Program *parseAST();
 /*
 size of types
 int: 4 bytes
-char: 1
+char: 1 byte
 
 */
 
