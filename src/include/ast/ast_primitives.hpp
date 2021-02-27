@@ -16,25 +16,25 @@ class Variable : public Program {
             return id;
         }
 
-        virtual long getOffset(Context &context) const override  {
+        virtual long getOffset(Context *context) const override  {
             std::unordered_map<std::string,varInfo>::iterator it;
-            int n=context.stack.lut.size()-1;
+            int n=context->stack.lut.size()-1;
             for(int i=n;i>=0;i--)   {
-                it=context.stack.lut.at(i).find(getID());
-                if(it!=context.stack.lut.at(i).end()) {
-                    long offset = context.stack.size - it->second.offset;
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
+                    long offset = context->stack.size - it->second.offset;
                     return offset;
                 }
             }
             return 0;
         }
 
-        virtual std::string getVarType(Context &context) const override {
+        virtual std::string getVarType(Context *context) const override {
             std::unordered_map<std::string,varInfo>::iterator it;
-            int n=context.stack.lut.size()-1;
+            int n=context->stack.lut.size()-1;
             for(int i=n;i>=0;i--)   { //iterating through the vector of maps from the last map as it is the latest scope
-                it=context.stack.lut.at(i).find(getID());
-                if(it!=context.stack.lut.at(i).end()) { // iterating through each map, and if cant be found, move on ot next map
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) { // iterating through each map, and if cant be found, move on ot next map
                     return it->second.type;
                 }
             }
@@ -45,19 +45,19 @@ class Variable : public Program {
             dst<<id;
         }
 
-        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override {
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
             std::unordered_map<std::string,varInfo>::iterator it;
-            int n=context.stack.lut.size()-1;
+            int n=context->stack.lut.size()-1;
             int wtf;
             for(int i=n;i>=0;i--)   {
                 wtf=i;
-                it=context.stack.lut.at(i).find(getID());
-                if(it!=context.stack.lut.at(i).end()) {
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
                     break;
                 }
             }
-            if(it!=context.stack.lut.at(wtf).end()) {
-                long offset = context.stack.size - it->second.offset;
+            if(it!=context->stack.lut.at(wtf).end()) {
+                long offset = context->stack.size - it->second.offset;
                 if(it->second.type=="int")  {                
                     file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                 }
@@ -112,7 +112,7 @@ class Number : public Program {
             dst<<getValue();
         }
 
-        virtual void generate(std::ofstream &file, const char* destReg, Context & context) const override    {
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             file<<"li "<<std::string(destReg)<<", "<<getValue()<<std::endl;     // li {destReg}, {value}
         }
 };

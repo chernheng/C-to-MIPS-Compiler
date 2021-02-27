@@ -41,11 +41,11 @@ class DeclareVariable : public Program {
             dst<<";";
         }
 
-        virtual void generate(std::ofstream &file, const char* destReg, Context &context) const override {
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
             std::unordered_map<std::string,varInfo>::iterator it;
-            it=context.stack.lut.back().find(getID());
-            if(it==context.stack.lut.back().end())  {   // if variable is not found in latest variable scope
-                long offset = context.stack.size;
+            it=context->stack.lut.back().find(getID());
+            if(it==context->stack.lut.back().end())  {   // if variable is not found in latest variable scope
+                long offset = context->stack.size;
                 varInfo vf;
                 vf.offset=offset;
                 vf.length=1;
@@ -60,7 +60,7 @@ class DeclareVariable : public Program {
                     vf.numBytes=1;
                     stackInc=1;
                 }
-                context.stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
+                context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
                 if(init!=nullptr)   {
                     init->generate(file, "$t7", context);
                     if(stackInc==4) {
@@ -71,13 +71,13 @@ class DeclareVariable : public Program {
                     }
                 }
                 file<<"addiu $sp, $sp, -4"<<std::endl;     // bring $sp to top of stack (always move by 4 bytes to maintain word alignment)
-                context.stack.size+=4;
+                context->stack.size+=4;
                 file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
                 return;
             }   
             else    {                                     // if variable is found in latest variable scope
                 if(init!=nullptr)   {
-                    long offset = context.stack.size - it->second.offset;
+                    long offset = context->stack.size - it->second.offset;
                     init->generate(file, "$t7", context);
                     if(it->second.numBytes==4)  {
                         file<<"sw $t7, "<<offset<<"($t7)"<<std::endl;
