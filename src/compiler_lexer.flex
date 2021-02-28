@@ -33,6 +33,9 @@ continue        { return KW_CONTINUE;}
 !=              { return COND_NEQ;}
 [<]             { return COND_LT;}
 [>]             { return COND_GR;}
+"&&"            { return COND_AND;}
+"||"            { return COND_OR;}
+[!]             { return COND_NOT;}
 
 [=]               { return OP_EQUAL;}
 [*]             { return OP_TIMES; }
@@ -43,7 +46,7 @@ continue        { return KW_CONTINUE;}
 [%]             { return OP_MODULO;}
 [&]             { return OP_REF; }
 [|]             { return OP_OR; }
-[!~]            { return OP_NOT; }
+[~]             { return OP_NOT; }
 "<<"            { return OP_LSHIFT; }
 ">>"            { return OP_RSHIFT; }
 "++"            { return OP_INC;}

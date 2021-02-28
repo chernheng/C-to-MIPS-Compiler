@@ -21,7 +21,7 @@
 
 %token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
-%token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR
+%token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC
 %token SEMI_COLON NAME NUMBER VAR_TYPE
 
@@ -35,12 +35,16 @@
 
 %start ROOT
 
+%left COND_OR
+%left COND_AND
 %left OP_OR
 %left OP_XOR
 %left OP_REF
+%left COND_EQ COND_NEQ
+%left COND_GR COND_GREQ COND_LT COND_LTEQ 
 %left OP_LSHIFT OP_RSHIFT
 %left OP_PLUS OP_MINUS
-%right OP_NOT MINUS REF DEREF
+%right OP_NOT COND_NOT MINUS REF DEREF OP_INC OP_DEC
 
 %%
 
@@ -111,23 +115,25 @@ ASSIGNMENT : VARIABLE OP_EQUAL FUNCTION     { $$ = new AssignmentOperator($1,$3)
 
 
 MATH : CONDITION  {$$ = $1;}
-     | MATH OP_XOR CONDITION  {$$ = new BitXOROperator($1, $3); } // ^
-     | MATH OP_OR CONDITION  {$$ = new BitOROperator($1, $3); } // |
-     | MATH OP_REF CONDITION  {$$ = new BitANDOperator($1, $3); } // &
+     | MATH OP_XOR MATH  {$$ = new BitXOROperator($1, $3); } // ^ 
+     | MATH OP_OR MATH  {$$ = new BitOROperator($1, $3); } // |
+     | MATH OP_REF MATH  {$$ = new BitANDOperator($1, $3); } // &
+     | MATH COND_OR MATH  {$$ = new LogicalOR($1, $3); } // ||
+     | MATH COND_AND MATH  {$$ = new LogicalAND($1, $3); } // &&
 
 CONDITION : ADDSHIFT                          { $$ = $1; }
-          | CONDITION COND_EQ ADDSHIFT           { $$ = new EqualTo($1,$3); }
-          | CONDITION COND_NEQ ADDSHIFT          { $$ = new NotEqual($1,$3); }
-          | CONDITION COND_GREQ ADDSHIFT         { $$ = new GreaterEqual($1,$3); }
-          | CONDITION COND_LTEQ ADDSHIFT         { $$ = new LessEqual($1,$3); }
-          | CONDITION COND_GR ADDSHIFT           { $$ = new GreaterThan($1,$3); }
-          | CONDITION COND_LT ADDSHIFT           { $$ = new LessThan($1,$3); }
+          | CONDITION COND_EQ CONDITION           { $$ = new EqualTo($1,$3); }
+          | CONDITION COND_NEQ CONDITION          { $$ = new NotEqual($1,$3); }
+          | CONDITION COND_GREQ CONDITION         { $$ = new GreaterEqual($1,$3); }
+          | CONDITION COND_LTEQ CONDITION         { $$ = new LessEqual($1,$3); }
+          | CONDITION COND_GR CONDITION           { $$ = new GreaterThan($1,$3); }
+          | CONDITION COND_LT CONDITION           { $$ = new LessThan($1,$3); }
 
 ADDSHIFT : TERM  {$$ = $1;}
-     | ADDSHIFT OP_PLUS TERM      { $$ = new AddOperator($1, $3); }
-     | ADDSHIFT OP_MINUS TERM  {$$ = new SubOperator($1, $3); }
-     | ADDSHIFT OP_LSHIFT TERM  {$$ = new LeftShiftOperator($1, $3); } 
-     | ADDSHIFT OP_RSHIFT TERM  {$$ = new RightShiftOperator($1, $3); }
+     | ADDSHIFT OP_PLUS ADDSHIFT      { $$ = new AddOperator($1, $3); }
+     | ADDSHIFT OP_MINUS ADDSHIFT  {$$ = new SubOperator($1, $3); }
+     | ADDSHIFT OP_LSHIFT ADDSHIFT  {$$ = new LeftShiftOperator($1, $3); } 
+     | ADDSHIFT OP_RSHIFT ADDSHIFT  {$$ = new RightShiftOperator($1, $3); }
 
 TERM : NEG      { $$ = $1; }
      | TERM OP_TIMES NEG          { $$ = new MulOperator($1, $3); }
@@ -135,12 +141,13 @@ TERM : NEG      { $$ = $1; }
      | TERM OP_MODULO NEG         { $$ = new ModuloOperator($1, $3);}
 
 NEG : FACTOR        { $$ = $1; }
-    | OP_NOT FACTOR {$$ = new BitNOTOperator($2);}
-    | OP_MINUS FACTOR %prec MINUS {$$ = new NegOperator($2);}
-    | OP_REF FACTOR %prec REF {$$ = new RefOperator($2);}
-    | OP_TIMES FACTOR %prec DEREF {$$ = new DerefOperator($2);}
-    | FACTOR OP_INC {$$ = new IncOperator($1);}
-    | FACTOR OP_DEC {$$ = new DecOperator($1);}
+    | OP_NOT NEG {$$ = new BitNOTOperator($2);}
+    | COND_NOT NEG {$$ = new LogicalNOT($2);}
+    | OP_MINUS NEG %prec MINUS {$$ = new NegOperator($2);}
+    | OP_REF NEG %prec REF {$$ = new RefOperator($2);}
+    | OP_TIMES NEG %prec DEREF {$$ = new DerefOperator($2);}
+    | NEG OP_INC {$$ = new IncOperator($1);}
+    | NEG OP_DEC {$$ = new DecOperator($1);}
 
 FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number
@@ -148,6 +155,7 @@ FACTOR : VARIABLE     { $$ = $1; }    // variable
 
 
 VARIABLE : NAME   { $$ = new Variable($1); }    // variable
+
 
 
 %%

@@ -110,4 +110,14 @@ class LogicalOR : public Condition {
         }
 };
 
+class LogicalNOT : public Condition {
+    public:
+        LogicalNOT(ProgramPtr _a) : Condition(_a,nullptr) {}
+
+        virtual void print(std::ostream &dst) const override    {
+            dst << "!";
+            getA()->print(dst);
+        }
+};
+
 #endif
