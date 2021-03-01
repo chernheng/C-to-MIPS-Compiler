@@ -19,6 +19,10 @@ class Program {
             return "";
         }
 
+        virtual long spaceRequired() const  {
+            return 0;
+        }
+
         virtual void print(std::ostream &dst) const =0;
         
         // Implement generate function to generate code
@@ -39,6 +43,14 @@ class Command : public Program { //each line of a program is a command, it is wr
             delete next;
         }
 
+        virtual long spaceRequired() const override {
+            long tmp = action->spaceRequired();
+            if(next!=nullptr)   {
+                tmp += next->spaceRequired();
+            }
+            return tmp;
+        }
+
         virtual void print(std::ostream &dst) const override    {
             action->print(dst);
             dst<<std::endl;
@@ -51,6 +63,8 @@ class Command : public Program { //each line of a program is a command, it is wr
             if(context->stack.lut.size()==0) {
                 std::unordered_map<std::string,varInfo> tmp;
                 context->stack.lut.push_back(tmp);
+                long stackSize = spaceRequired();
+                context->stack.size = stackSize;
             }
             action->generate(file, destReg, context);
             if(next!=nullptr)   {
@@ -81,14 +95,20 @@ class Scope : public Program {
             if(action!=nullptr) {
                 std::unordered_map<std::string,varInfo> tmp;
                 long initStackSize = context->stack.size;
+                long initSliderVal=context->stack.slider;
+                context->stack.slider=context->stack.size;
+                long delta=action->spaceRequired();
+                context->stack.size+=delta;
+                if(delta>0) {
+                    file<<"addiu $sp, $sp, -"<<delta<<std::endl;
+                }
                 context->stack.lut.push_back(tmp);
-                action->generate(file, destReg, context);
-                long finalStackSize=context->stack.size;
-                long delta = finalStackSize - initStackSize;
-                if(delta!=0)    {
+                action->generate(file, destReg, context);          // run scope contents
+                if(delta>0)    {
                     file<<"addiu $sp, $sp, "<<delta<<std::endl;    // shift down the stack pointer (always move sp by 4 to maintain word alignment)
                 }
                 context->stack.size=initStackSize;
+                context->stack.slider=initSliderVal;
                 context->stack.lut.pop_back();
             }            
         }

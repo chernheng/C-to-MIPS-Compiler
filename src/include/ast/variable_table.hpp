@@ -6,6 +6,8 @@
 #include <vector>
 #include <unordered_map>
 
+std::string makeLabel(const char* _name);
+
 struct varInfo {
     long offset;
     int numBytes;  // number of bytes per element
@@ -16,13 +18,16 @@ struct varInfo {
 
 struct VarLUT {
     long size=0;
+    long slider=0;
     std::vector<std::unordered_map<std::string,varInfo>> lut;
 };
 
 struct Context {
     VarLUT stack;
-    std::string startPoint="";
-    std::string endPoint="";
+    std::string LoopStartPoint="";
+    std::string LoopEndPoint="";
+    std::string BranchEndPoint="";
+    std::string FuncRetnPoint="";
 };
 
 

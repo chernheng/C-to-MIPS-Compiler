@@ -1,6 +1,8 @@
 #ifndef COMPILER_AST_CONDITIONS_HPP
 #define COMPILER_AST_CONDITIONS_HPP
 
+#include "variable_table.hpp"
+
 class Condition : public Program {
     private:
         ProgramPtr a;
@@ -19,6 +21,17 @@ class Condition : public Program {
 
         ProgramPtr getB() const {
             return b;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp=4;
+            if(getA()!=nullptr) {
+                tmp+=getA()->spaceRequired();
+            }
+            if(getB()!=nullptr) {
+                tmp+=getB()->spaceRequired();
+            }
+            return tmp;
         }
 };
 

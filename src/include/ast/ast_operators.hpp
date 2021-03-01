@@ -23,6 +23,17 @@ class Operator : public Program {
             return right;
         }
 
+        virtual long spaceRequired() const override {
+            long tmp=4;
+            if(left!=nullptr)   {
+                tmp+=left->spaceRequired();
+            }
+            if(right!=nullptr)  {
+                tmp+=right->spaceRequired();
+            }
+            return tmp;
+        }
+
         virtual const char *getOpcode() const =0;
 
         virtual void print(std::ostream &dst) const override    {
@@ -39,6 +50,10 @@ class AssignmentOperator : public Operator {
         }
     public:
         AssignmentOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual long spaceRequired() const override  {   // assignmenr operator does not need any temporary stack space
+            return 0;
+        }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             long offset=getLeft()->getOffset(context);
@@ -64,13 +79,12 @@ class AddOperator : public Operator {
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t1", context);
-            file<<"addiu $sp, $sp, -4"<<std::endl; //decrement stack pointer to store a value
-            context->stack.size+=4;
-            file<<"sw $t1, 4($sp)"<<std::endl;
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
             getRight()->generate(file, "$t2", context);
-            file<<"lw $t1, 4($sp)"<<std::endl;
-            file<<"addiu $sp, $sp, 4"<<std::endl;
-            context->stack.size-=4;
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
             file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
         }
 };
@@ -85,13 +99,12 @@ class SubOperator : public Operator {
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t1", context);
-            file<<"addiu $sp, $sp, -4"<<std::endl;
-            context->stack.size+=4;
-            file<<"sw $t1, 4($sp)"<<std::endl;
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
             getRight()->generate(file, "$t2", context);
-            file<<"lw $t1, 4($sp)"<<std::endl;
-            file<<"addiu $sp, $sp, 4"<<std::endl;
-            context->stack.size-=4;
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
             file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
         }
 };

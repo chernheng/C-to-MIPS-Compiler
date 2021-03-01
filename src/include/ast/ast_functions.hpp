@@ -1,7 +1,7 @@
 #ifndef COMPILER_AST_FUNCTIONS_HPP
 #define COMPILER_AST_FUNCTIONS_HPP
 
-class Function : public Program {
+class Function : public Program {   // function call 
     private:
         std::string id;
     public:
@@ -14,7 +14,7 @@ class Function : public Program {
         }
 };
 
-class FunctionDef : public Program {
+class FunctionDef : public Program {    // function definition 
     private:
         std::string type; // return type of function
         std::string id; // name of function
@@ -39,6 +39,10 @@ class FunctionDef : public Program {
 
         std::string getType() const    {
             return type;
+        }
+
+        virtual long spaceRequired() const override {   // 5 ints needed: fp, a0, a1, a2 and a3
+            return 20;
         }
 
         void print(std::ostream &dst) const override    {
