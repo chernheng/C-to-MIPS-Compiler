@@ -65,6 +65,7 @@ class Command : public Program { //each line of a program is a command, it is wr
                 context->stack.lut.push_back(tmp);
                 long stackSize = spaceRequired();
                 context->stack.size = stackSize;
+                file<<"addiu $sp, $sp, -"<<stackSize<<"($sp)"<<std::endl;
             }
             action->generate(file, destReg, context);
             if(next!=nullptr)   {

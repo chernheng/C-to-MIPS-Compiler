@@ -16,7 +16,7 @@ bin/print_check : src/print_check.o src/compiler_parser.tab.o src/compiler_lexer
 src/label_generator.o : src/include/label_generator.cpp
 	g++ $(CPPFLAGS) -c -o src/label_generator.o $^
 
-bin/c_compiler : src/c_compiler.o src/compiler_parser.tab.o src/compiler_lexer.yy.o
+bin/c_compiler : src/c_compiler.o src/compiler_parser.tab.o src/compiler_lexer.yy.o src/label_generator.o
 	mkdir -p bin
 	g++ $(CPPFLAGS) -o bin/c_compiler $^
 	
