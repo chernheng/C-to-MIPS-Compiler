@@ -1,12 +1,13 @@
 #include "include/ast.hpp"
 #include <fstream>
 
-int main()
-{
-    const Program *ast=parseAST();
+int main(int argc, char** argv)
+{   
+    const Program *ast=parseAST(argv[2]);
     Context context;
     std::ofstream myfile;
-    myfile.open("output.txt");
+    std::string out_file = argv[4];
+    myfile.open(out_file);
 
     ast->generate(myfile,"$v0",&context);
     myfile.close();

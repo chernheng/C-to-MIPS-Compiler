@@ -28,7 +28,7 @@ union TokenValue{
 };
 
 // extern TokenValue yylval;
-extern const Program *parseAST();
+extern const Program *parseAST(char* file);
 
 
 #endif
