@@ -9,11 +9,11 @@ std::string makeLabel(const char* _name) {
     it=labelNameList.find(name);
     if(it==labelNameList.end())    {
         labelNameList.insert(std::pair<std::string,long>(name,1));
-        std::string outString = "_"+name+std::to_string(0)+"_";
+        std::string outString = "_"+name+"_"+std::to_string(0)+"_";
         return outString;
     }
     else    {
-        std::string outString = "_"+name+std::to_string(it->second)+"_";
+        std::string outString = "_"+name+"_"+std::to_string(it->second)+"_";
         it->second++;
         return outString;   
     }
