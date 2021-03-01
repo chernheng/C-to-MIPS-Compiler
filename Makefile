@@ -1,7 +1,7 @@
 CPPFLAGS += -std=c++17 -W -Wall -g -Wno-unused-parameter
 CPPFLAGS += -I inc
 
-all : bin/print_check
+all : bin/c_compiler
 
 src/compiler_parser.tab.cpp src/compiler_parser.tab.hpp : src/compiler_parser.y
 	bison -v -d src/compiler_parser.y -o src/compiler_parser.tab.cpp
@@ -16,6 +16,10 @@ bin/print_check : src/print_check.o src/compiler_parser.tab.o src/compiler_lexer
 src/label_generator.o : src/include/label_generator.cpp
 	g++ $(CPPFLAGS) -c -o src/label_generator.o $^
 
+bin/c_compiler : src/c_compiler.o src/compiler_parser.tab.o src/compiler_lexer.yy.o
+	mkdir -p bin
+	g++ $(CPPFLAGS) -o bin/c_compiler $^
+	
 clean :
 	rm -f src/*.o
 	rm src/*.tab.cpp
