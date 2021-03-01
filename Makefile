@@ -9,10 +9,13 @@ src/compiler_parser.tab.cpp src/compiler_parser.tab.hpp : src/compiler_parser.y
 src/compiler_lexer.yy.cpp : src/compiler_lexer.flex src/compiler_parser.tab.hpp
 	flex -o src/compiler_lexer.yy.cpp  src/compiler_lexer.flex
 
-bin/print_check : src/print_check.o src/compiler_parser.tab.o src/compiler_lexer.yy.o
+bin/print_check : src/print_check.o src/compiler_parser.tab.o src/compiler_lexer.yy.o src/label_generator.o
 	mkdir -p bin
 	g++ $(CPPFLAGS) -o bin/print_check $^
-	
+
+src/label_generator.o : src/include/label_generator.cpp
+	g++ $(CPPFLAGS) -c -o src/label_generator.o $^
+
 clean :
 	rm -f src/*.o
 	rm src/*.tab.cpp
