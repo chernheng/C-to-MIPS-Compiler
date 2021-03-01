@@ -27,6 +27,15 @@ class ReturnStatement : public Program {
             }
         }
 
+        virtual long spaceRequired() const override {
+            if(getAction()!=nullptr)    {
+                return getAction()->spaceRequired();
+            }
+            else    {
+                return 0;
+            }
+        }
+
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             if(context->FuncRetnPoint!="")  {                
                 if(getAction()!=nullptr)    {
