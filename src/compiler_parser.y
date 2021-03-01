@@ -8,6 +8,7 @@
   // We are declaring the functions provided by Flex, so
   // that Bison generated code can call them.
   int yylex(void);
+  extern FILE *yyin;
   void yyerror(const char *);
 }
 
@@ -162,9 +163,11 @@ VARIABLE : NAME   { $$ = new Variable($1); }    // variable
 
 const Program *g_root; // Definition of variable (to match declaration earlier)
 
-const Program *parseAST()
+const Program *parseAST(char* file)
 {
   g_root=0;
+  yyin = fopen(file,"r");
   yyparse();
+  fclose(yyin);
   return g_root;
 }

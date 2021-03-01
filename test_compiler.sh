@@ -35,4 +35,4 @@ fi
 
 echo "========================================"
 
-bin/c_compiler < dev/test.c
+bin/c_compiler -S dev/test.c -o output.s
