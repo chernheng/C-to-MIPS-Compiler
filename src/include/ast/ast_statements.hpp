@@ -26,6 +26,15 @@ class ReturnStatement : public Program {
                 dst<<";"<<std::endl;
             }
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            if(context->FuncRetnPoint!="")  {                
+                if(getAction()!=nullptr)    {
+                    getAction()->generate(file, destReg, context);
+                }
+                file<<"b "<<context->FuncRetnPoint<<std::endl;
+            }
+        }
 };
 
 class BreakStatement : public Program {
@@ -33,12 +42,24 @@ class BreakStatement : public Program {
         virtual void print(std::ostream &dst) const override    {
             dst<<"break;"<<std::endl;
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            if(context->LoopEndPoint!="")  {
+                file<<"b "<<context->LoopEndPoint<<std::endl;
+            }
+        }
 };
 
 class ContinueStatement : public Program {
     public:
         virtual void print(std::ostream &dst) const override    {
             dst<<"continue;"<<std::endl;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            if(context->LoopStartPoint!="") {
+                file<<"b "<<context->LoopStartPoint<<std::endl;
+            }
         }
 };
 
