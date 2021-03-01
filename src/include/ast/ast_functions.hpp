@@ -72,6 +72,7 @@ class FunctionDef : public Program {    // function definition
             file<<"lw $fp, "<<(context->stack.size - initFP)<<"($sp)"<<std::endl;
             file<<"addiu $sp, $sp, "<<preSpace<<std::endl;     // deallocate space used for FP and arguments
             file<<"jr $ra"<<std::endl;                         // end of function, return to caller 
+            file<<"nop"<<std::endl;
             context->stack.slider = initFP;               // dealloc initFP
             context->FuncRetnPoint = initFuncEnd;
             context->stack.size = initSP;

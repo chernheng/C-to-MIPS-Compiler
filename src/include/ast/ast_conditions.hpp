@@ -44,6 +44,22 @@ class EqualTo : public Condition {      // a == b
             dst<<" == ";
             getB()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {   // destReg = 1 if true, destReg = 0 if false
+            long tmpOffset = context->stack.size - context->stack.slider;
+            getA()->generate(file, "$t1", context);                             // store value of A into $t1
+            file<<"sw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getB()->generate(file, "$t2", context);                             // store value of B into $t2
+            file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            std::string tmpLabel=makeLabel("cond_EQ");
+            file<<"beq $t1, $t2, "<<tmpLabel<<std::endl;                        // beq $t1, $t2, tmpLabel (if A == B, skip zeroing of destReg)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;                                     // tmpLabel: 
+        }
 };
 
 class NotEqual : public Condition {     // a != b
@@ -54,6 +70,22 @@ class NotEqual : public Condition {     // a != b
             getA()->print(dst);
             dst<<" != ";
             getB()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            long tmpOffset = context->stack.size - context->stack.slider;
+            getA()->generate(file, "$t1", context);                             // store value of A into $t1
+            file<<"sw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getB()->generate(file, "$t2", context);                             // store value of B into $t2
+            file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            std::string tmpLabel=makeLabel("cond_NEQ");
+            file<<"bne $t1, $t2, "<<tmpLabel<<std::endl;                        // bne $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;                                     // tmpLabel:
         }
 };
 
@@ -66,6 +98,22 @@ class GreaterThan : public Condition {  // a > b
             dst<<" > ";
             getB()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
+            long tmpOffset = context->stack.size - context->stack.slider;
+            getA()->generate(file, "$t1", context);                             // store value of A into $t1
+            file<<"sw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getB()->generate(file, "$t2", context);                             // store value of B into $t2
+            file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            std::string tmpLabel=makeLabel("cond_GR");
+            file<<"bgt $t1, $t2, "<<tmpLabel<<std::endl;                        // bgt $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;
+        }
 };
 
 class GreaterEqual : public Condition { // a >= b
@@ -76,6 +124,22 @@ class GreaterEqual : public Condition { // a >= b
             getA()->print(dst);
             dst<<" >= ";
             getB()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
+            long tmpOffset = context->stack.size - context->stack.slider;
+            getA()->generate(file, "$t1", context);                             // store value of A into $t1
+            file<<"sw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getB()->generate(file, "$t2", context);                             // store value of B into $t2
+            file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            std::string tmpLabel=makeLabel("cond_GE");
+            file<<"bge $t1, $t2, "<<tmpLabel<<std::endl;                        // bge $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;
         }
 };
 
@@ -88,6 +152,22 @@ class LessThan : public Condition {     // a < b
             dst<<" < ";
             getB()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            long tmpOffset = context->stack.size - context->stack.slider;
+            getA()->generate(file, "$t1", context);                             // store value of A into $t1
+            file<<"sw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getB()->generate(file, "$t2", context);                             // store value of B into $t2
+            file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            std::string tmpLabel=makeLabel("cond_LT");
+            file<<"blt $t1, $t2, "<<tmpLabel<<std::endl;                        // blt $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;
+        }
 };
 
 class LessEqual : public Condition {    // a <= b
@@ -98,6 +178,22 @@ class LessEqual : public Condition {    // a <= b
             getA()->print(dst);
             dst<<" <= ";
             getB()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            long tmpOffset = context->stack.size - context->stack.slider;
+            getA()->generate(file, "$t1", context);                             // store value of A into $t1
+            file<<"sw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getB()->generate(file, "$t2", context);                             // store value of B into $t2
+            file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            std::string tmpLabel=makeLabel("cond_LE");
+            file<<"ble $t1, $t2, "<<tmpLabel<<std::endl;                        // ble $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;
         }
 };
 
@@ -110,6 +206,19 @@ class LogicalAND : public Condition {
             dst<<" && ";
             getB()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string endPoint=makeLabel("cond_end");
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            getA()->generate(file, "$t1", context);                             // evaluate A
+            file<<"beq $t1, $zero, "<<endPoint<<std::endl;                      // if A == 0, jump to end (final destReg value is 0)
+            file<<"nop"<<std::endl;
+            getB()->generate(file, "$t2", context);                             // evaluate B
+            file<<"beq $t2, $zero, "<<endPoint<<std::endl;                      // if B == 0, jump to end (final destReg value is 0)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zer0, 1 (set destReg to 1 if A and B are non-zero)
+            file<<endPoint<<":"<<std::endl;
+        }
 };
 
 class LogicalOR : public Condition {
@@ -121,6 +230,19 @@ class LogicalOR : public Condition {
             dst<<" || ";
             getB()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string endPoint = makeLabel("cond_end");
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zer0, 1 (set destReg to 1) 
+            getA()->generate(file, "$t1", context);                             // evaluate A
+            file<<"bne $t1, $t2, "<<endPoint<<std::endl;                        // if A != 0, jump to end (final destreg value is 1)
+            file<<"nop"<<std::endl;
+            getB()->generate(file, "$t2", context);                             // evalute B
+            file<<"bne $t1, $t2, "<<endPoint<<std::endl;                        // if B != 0, jump to end (final destreg value is 1)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<endPoint<<":"<<std::endl;
+        }
 };
 
 class LogicalNOT : public Condition {
@@ -130,6 +252,10 @@ class LogicalNOT : public Condition {
         virtual void print(std::ostream &dst) const override    {
             dst << "!";
             getA()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            file<<"nor "<<std::string(destReg)<<", "<<std::string(destReg)<<", "<<std::string(destReg)<<std::endl;  // not achived by: nor $1, $1, $1
         }
 };
 
