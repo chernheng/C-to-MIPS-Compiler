@@ -49,6 +49,24 @@ class FunctionDef : public Program {    // function definition
             dst<<getType()<<" "<<getID()<<"() ";
             getAction()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string initFuncEnd = context->FuncRetnPoint;
+            std::string returnPoint = makeLabel("func_end");
+            context->FuncRetnPoint = returnPoint;
+            context->isFunc=1;
+            file<<getID()<<":"<<std::endl;          // start of function
+            long initFP = context->stack.slider;
+            context->stack.slider+=4;
+            file<<"sw $fp, "<<(context->stack.size - initFP)<<"($sp)"<<std::endl;
+            file<<"move $fp, $sp"<<std::endl;
+            action->generate(file, destReg, context);
+            file<<"move $sp, $fp"<<std::endl;
+            file<<"lw $fp, "<<(context->stack.size - initFP)<<"($sp)"<<std::endl;
+            file<<"jr $ra";                         // end of function, return to caller 
+            context->stack.slider-=4;               // dealloc initFP
+            context->FuncRetnPoint = initFuncEnd;
+        }
 };
 
 #endif

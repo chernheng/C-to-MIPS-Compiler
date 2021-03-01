@@ -28,6 +28,7 @@ struct Context {
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";
     std::string FuncRetnPoint="";
+    int isFunc=0;
 };
 
 

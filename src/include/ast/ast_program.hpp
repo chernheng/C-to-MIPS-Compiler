@@ -94,6 +94,8 @@ class Scope : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
             if(action!=nullptr) {
                 std::unordered_map<std::string,varInfo> tmp;
+                int isFunc = context->isFunc;
+                context->isFunc=0;
                 long initStackSize = context->stack.size;
                 long initSliderVal=context->stack.slider;
                 context->stack.slider=context->stack.size;
@@ -104,6 +106,9 @@ class Scope : public Program {
                 }
                 context->stack.lut.push_back(tmp);
                 action->generate(file, destReg, context);          // run scope contents
+                if(isFunc==1)   {
+                    file<<context->FuncRetnPoint<<":"<<std::endl;
+                }
                 if(delta>0)    {
                     file<<"addiu $sp, $sp, "<<delta<<std::endl;    // shift down the stack pointer (always move sp by 4 to maintain word alignment)
                 }
