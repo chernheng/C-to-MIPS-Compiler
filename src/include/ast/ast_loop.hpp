@@ -44,6 +44,7 @@ class WhileLoop : public Loop {
             file<<"nop"<<std::endl;
             getAction()->generate(file, destReg, context);  // loop action
             file<<"b "<<context->LoopStartPoint<<std::endl; // jump to start of loop
+            file<<"nop"<<std::endl;
             file<<context->LoopEndPoint<<":"<<std::endl;    // loop end
             context->LoopStartPoint = initLoopStart;
             context->LoopEndPoint = initLoopEnd;
