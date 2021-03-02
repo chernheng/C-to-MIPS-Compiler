@@ -12,6 +12,7 @@ else
     # on which to test that. From reading the OSX docs,
     # it looks compatible.
     # The code \x0D is the ASCII code of carriage-return,
+    
     # so it the regex should delete any CRs at the end of
     # a line (or anywhere in a line)
     DOS2UNIX="cat"
@@ -35,4 +36,11 @@ fi
 
 echo "========================================"
 
-bin/c_compiler -S dev/test.c -o output.s
+bin/c_compiler -S dev/test.c -o dev/output.s
+
+echo "========================================"
+echo "Compiling with driver program"
+mips-linux-gnu-gcc -mfp32 -o dev/test_program.o -c dev/output.s
+mips-linux-gnu-gcc -mfp32 -static -o dev/test_program dev/test_program.o dev/test_driver.c
+qemu-mips dev/test_program
+echo "Exit code: $?"

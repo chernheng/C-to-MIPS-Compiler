@@ -106,8 +106,8 @@ FLOW : RETN SEMI_COLON                       { $$ = $1; }
      | KW_BREAK SEMI_COLON                   { $$ = new BreakStatement(); }
      | KW_CONTINUE SEMI_COLON                { $$ = new ContinueStatement(); }
 
-RETN : KW_RETURN SEMI_COLON                  { $$ = new ReturnStatement(); }
-     | KW_RETURN MATH SEMI_COLON        { $$ = new ReturnStatement($2); }
+RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
+     | KW_RETURN MATH        { $$ = new ReturnStatement($2); }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
