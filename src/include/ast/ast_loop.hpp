@@ -32,6 +32,22 @@ class WhileLoop : public Loop {
             dst<<")"<<std::endl;
             getAction()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string initLoopStart = context->LoopStartPoint;
+            std::string initLoopEnd = context->LoopEndPoint;
+            context->LoopStartPoint = makeLabel("Loop_Start");
+            context->LoopEndPoint = makeLabel("Loop_End");
+            file<<context->LoopStartPoint<<":"<<std::endl;  // loop start
+            getCondition()->generate(file, "$t6", context);
+            file<<"beq $t6, $zero, "<<context->LoopEndPoint<<std::endl; // jump to loop end if condition == 0
+            file<<"nop"<<std::endl;
+            getAction()->generate(file, destReg, context);  // loop action
+            file<<"b "<<context->LoopStartPoint<<std::endl; // jump to start of loop
+            file<<context->LoopEndPoint<<":"<<std::endl;    // loop end
+            context->LoopStartPoint = initLoopStart;
+            context->LoopEndPoint = initLoopEnd;
+        }
 };
 
 class ForLoop : public Loop  {
