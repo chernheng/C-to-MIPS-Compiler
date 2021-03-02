@@ -42,6 +42,7 @@ class ReturnStatement : public Program {
                     getAction()->generate(file, destReg, context);
                 }
                 file<<"b "<<context->FuncRetnPoint<<std::endl;
+                file<<"nop"<<std::endl;
             }
         }
 };
@@ -54,7 +55,16 @@ class BreakStatement : public Program {
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             if(context->LoopEndPoint!="")  {
+                file<<"addiu $sp, $sp, "<<(context->stack.size - context->LoopInitSP)<<std::endl;
                 file<<"b "<<context->LoopEndPoint<<std::endl;
+                file<<"nop"<<std::endl;
+                context->stack.size = context->LoopInitSP;
+                context->stack.slider = context->LoopInitSL;
+                if(context->LoopScopeCount>0)   {
+                    for(int i=0;i<context->LoopScopeCount;i++)  {
+                        context->stack.lut.pop_back();
+                    }
+                }
             }
         }
 };
@@ -68,6 +78,7 @@ class ContinueStatement : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             if(context->LoopStartPoint!="") {
                 file<<"b "<<context->LoopStartPoint<<std::endl;
+                file<<"nop"<<std::endl;
             }
         }
 };

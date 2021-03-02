@@ -102,6 +102,9 @@ class Scope : public Program {
                 context->stack.slider=context->stack.size;
                 long delta=action->spaceRequired();
                 context->stack.size+=delta;
+                if(context->isLoop==1)  {
+                    context->LoopScopeCount++;
+                }
                 if(delta>0) {
                     file<<"addiu $sp, $sp, -"<<delta<<std::endl;
                 }

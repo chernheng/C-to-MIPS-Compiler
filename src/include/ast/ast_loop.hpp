@@ -36,6 +36,12 @@ class WhileLoop : public Loop {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::string initLoopStart = context->LoopStartPoint;
             std::string initLoopEnd = context->LoopEndPoint;
+            int initialIsLoop = context->isLoop;            // info for break; to handle stack deallocation
+            long initialLoopSP = context->LoopInitSP;
+            long initialLoopSL = context->LoopInitSL;
+            long initialLoopSC = context->LoopScopeCount;
+            context->LoopScopeCount = 0;
+            context->isLoop=1;
             context->LoopStartPoint = makeLabel("Loop_Start");
             context->LoopEndPoint = makeLabel("Loop_End");
             file<<context->LoopStartPoint<<":"<<std::endl;  // loop start
@@ -46,8 +52,12 @@ class WhileLoop : public Loop {
             file<<"b "<<context->LoopStartPoint<<std::endl; // jump to start of loop
             file<<"nop"<<std::endl;
             file<<context->LoopEndPoint<<":"<<std::endl;    // loop end
-            context->LoopStartPoint = initLoopStart;
+            context->LoopStartPoint = initLoopStart;        // restore context variables to their original values 
             context->LoopEndPoint = initLoopEnd;
+            context->LoopInitSP = initialLoopSP;
+            context->LoopInitSL = initialLoopSL;
+            context->LoopScopeCount = initialLoopSC;
+            context->isLoop = initialIsLoop;
         }
 };
 
