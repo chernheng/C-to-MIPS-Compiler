@@ -71,9 +71,11 @@ class DeclareVariable : public Program {
                 init->generate(file, "$t7", context);
                 if(stackInc==4) {
                     file<<"sw $t7, 0($sp)"<<std::endl;
+                    file<<"addiu $sp, $sp, -4"<< std::endl;//decrement the stack pointer after adding
                 }
                 else if(stackInc==1)    {
                     file<<"sb $t7, 0($sp)"<<std::endl;
+                    file<<"addiu $sp, $sp, -4"<< std::endl;
                 }
             }
             context->stack.slider+=4;
