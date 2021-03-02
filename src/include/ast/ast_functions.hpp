@@ -55,12 +55,14 @@ class FunctionDef : public Program {    // function definition
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             long initSP = context->stack.size;
+            long initSL = context->stack.slider;
             long preSpace=4;                                    // space (in bytes) needed for FP and arguments
             std::string initFuncEnd = context->FuncRetnPoint;
             std::string returnPoint = makeLabel("func_end");
             context->FuncRetnPoint = returnPoint;
             context->isFunc=1;
-            file<<getID()<<":"<<std::endl;          // start of function
+            file<<getID()<<":"<<std::endl;                   // start of function
+            context->stack.slider = context->stack.size;
             context->stack.size += preSpace;                 // allocate space for $fp (and arguments too [implement later])
             file<<"addiu $sp, $sp, -"<<preSpace<<std::endl;
             long initFP = context->stack.slider;
@@ -73,8 +75,8 @@ class FunctionDef : public Program {    // function definition
             file<<"addiu $sp, $sp, "<<preSpace<<std::endl;     // deallocate space used for FP and arguments
             file<<"jr $ra"<<std::endl;                         // end of function, return to caller 
             file<<"nop"<<std::endl;
-            context->stack.slider = initFP;               // dealloc initFP
             context->FuncRetnPoint = initFuncEnd;
+            context->stack.slider = initSL;
             context->stack.size = initSP;
         }
 };
