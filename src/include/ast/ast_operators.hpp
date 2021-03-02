@@ -238,7 +238,7 @@ class RightShiftOperator : public Operator {
         RightShiftOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
 };
 
-class IncOperator : public Operator {
+class IncOperator : public Operator {   // i++
     protected:
         virtual const char *getOpcode() const override  {
             return "++";
@@ -250,9 +250,21 @@ class IncOperator : public Operator {
             getLeft()->print(dst);
             dst<<"++";
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t0", context);
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+            file<<"addiu $t0, $t0, 1"<<std::endl;
+            if(getLeft()->getVarType(context)=="int")  {
+                file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            else if(getLeft()->getVarType(context)=="char")    {
+                file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+        }
 };
 
-class DecOperator : public Operator {
+class DecOperator : public Operator {   // i--
     protected:
         virtual const char *getOpcode() const override  {
             return "--";
@@ -263,6 +275,18 @@ class DecOperator : public Operator {
         virtual void print(std::ostream &dst) const override    {
             getLeft()->print(dst);
             dst<<"--";
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t0", context);
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+            file<<"addiu $t0, $t0, -1"<<std::endl;
+            if(getLeft()->getVarType(context)=="int")  {
+                file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            else if(getLeft()->getVarType(context)=="char")    {
+                file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
         }
 };
 

@@ -1,6 +1,10 @@
 
 int fn1()  {
-    int a=2;
+    int a=10;
     int b = 23;
-    return a;
+    while(a>0)  {
+        b=b+1;
+        a=a+1;
+    }
+    return b;
 }

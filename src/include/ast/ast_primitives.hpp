@@ -16,7 +16,7 @@ class Variable : public Program {
             return id;
         }
 
-        virtual long getOffset(Context *context) const override  {
+        virtual long getOffset(Context *context) const override  {  // returns offset from current $sp
             std::unordered_map<std::string,varInfo>::iterator it;
             int n=context->stack.lut.size()-1;
             for(int i=n;i>=0;i--)   {
