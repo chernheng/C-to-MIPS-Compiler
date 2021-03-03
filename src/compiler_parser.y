@@ -73,6 +73,7 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
         | FLOW                      { $$ = $1; }
         | FUNCTION                  { $$ = $1; }
         | SCOPE                     { $$ = $1; }
+        | NEG SEMI_COLON            { $$ = $1; }
 
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }

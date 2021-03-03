@@ -3,7 +3,7 @@ CPPFLAGS += -I inc
 
 all : bin/c_compiler
 
-src/compiler_parser.tab.cpp src/compiler_parser.tab.hpp : src/compiler_parser.y
+src/compiler_parser.tab.cpp src/compiler_parser.tab.hpp : src/compiler_parser.y src/include/ast.hpp src/include/ast.*
 	bison -v -d src/compiler_parser.y -o src/compiler_parser.tab.cpp
 
 src/compiler_lexer.yy.cpp : src/compiler_lexer.flex src/compiler_parser.tab.hpp

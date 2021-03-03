@@ -24,6 +24,19 @@ else
     # - CRLF
 fi
 
+if [ $1 -eq 1 ] ; then
+    echo "========================================"
+    bin/c_compiler -S dev/test.c -o dev/output.s
+
+    echo "========================================"
+    echo "Compiling with driver program"
+    mips-linux-gnu-gcc -mfp32 -o dev/test_program.o -c dev/output.s
+    mips-linux-gnu-gcc -mfp32 -static -o dev/test_program dev/test_program.o dev/test_driver.c
+    qemu-mips dev/test_program
+    echo "Exit code: $?"
+    exit 0;
+fi
+
 echo "========================================"
 echo " Cleaning the temporaries and outputs"
 make clean
