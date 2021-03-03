@@ -4,4 +4,6 @@ src/*.tab.hpp
 src/*.output
 src/*.yy.cpp
 bin/*
+dev/*.s
+dev/*.o
 output.txt

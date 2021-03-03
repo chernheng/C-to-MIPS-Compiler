@@ -53,12 +53,13 @@ class EqualTo : public Condition {      // a == b
             getB()->generate(file, "$t2", context);                             // store value of B into $t2
             file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
             context->stack.slider-=4;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            file<<"addiu $t0, $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
             std::string tmpLabel=makeLabel("cond_EQ");
             file<<"beq $t1, $t2, "<<tmpLabel<<std::endl;                        // beq $t1, $t2, tmpLabel (if A == B, skip zeroing of destReg)
             file<<"nop"<<std::endl;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
-            file<<tmpLabel<<":"<<std::endl;                                     // tmpLabel: 
+            file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -80,12 +81,13 @@ class NotEqual : public Condition {     // a != b
             getB()->generate(file, "$t2", context);                             // store value of B into $t2
             file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
             context->stack.slider-=4;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            file<<"addiu $t0, $zero, 1"<<std::endl;       // addiu destReg, $zero, 1 (set destReg = 1)
             std::string tmpLabel=makeLabel("cond_NEQ");
             file<<"bne $t1, $t2, "<<tmpLabel<<std::endl;                        // bne $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
             file<<"nop"<<std::endl;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
-            file<<tmpLabel<<":"<<std::endl;                                     // tmpLabel:
+            file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<tmpLabel<<":"<<std::endl;
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -107,12 +109,13 @@ class GreaterThan : public Condition {  // a > b
             getB()->generate(file, "$t2", context);                             // store value of B into $t2
             file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
             context->stack.slider-=4;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            file<<"addiu $t0, $zero, 1"<<std::endl;       // addiu destReg, $zero, 1 (set destReg = 1)
             std::string tmpLabel=makeLabel("cond_GR");
             file<<"bgt $t1, $t2, "<<tmpLabel<<std::endl;                        // bgt $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
             file<<"nop"<<std::endl;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
             file<<tmpLabel<<":"<<std::endl;
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -134,12 +137,13 @@ class GreaterEqual : public Condition { // a >= b
             getB()->generate(file, "$t2", context);                             // store value of B into $t2
             file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
             context->stack.slider-=4;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            file<<"addiu $t0, $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
             std::string tmpLabel=makeLabel("cond_GE");
             file<<"bge $t1, $t2, "<<tmpLabel<<std::endl;                        // bge $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
             file<<"nop"<<std::endl;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
             file<<tmpLabel<<":"<<std::endl;
+            file<<"move "<<std::string(destReg)<<", $t0"<< std::endl;
         }
 };
 
@@ -161,12 +165,13 @@ class LessThan : public Condition {     // a < b
             getB()->generate(file, "$t2", context);                             // store value of B into $t2
             file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
             context->stack.slider-=4;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            file<<"addiu $t0, $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
             std::string tmpLabel=makeLabel("cond_LT");
             file<<"blt $t1, $t2, "<<tmpLabel<<std::endl;                        // blt $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
             file<<"nop"<<std::endl;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
             file<<tmpLabel<<":"<<std::endl;
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -188,12 +193,13 @@ class LessEqual : public Condition {    // a <= b
             getB()->generate(file, "$t2", context);                             // store value of B into $t2
             file<<"lw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
             context->stack.slider-=4;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+            file<<"addiu $t0, $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
             std::string tmpLabel=makeLabel("cond_LE");
             file<<"ble $t1, $t2, "<<tmpLabel<<std::endl;                        // ble $t1, $t2, tmpLabel (if A != B, skip zeroing of destReg)
             file<<"nop"<<std::endl;
-            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
             file<<tmpLabel<<":"<<std::endl;
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -235,10 +241,10 @@ class LogicalOR : public Condition {
             std::string endPoint = makeLabel("cond_end");
             file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zer0, 1 (set destReg to 1) 
             getA()->generate(file, "$t1", context);                             // evaluate A
-            file<<"bne $t1, $t2, "<<endPoint<<std::endl;                        // if A != 0, jump to end (final destreg value is 1)
+            file<<"bne $t1, $zero, "<<endPoint<<std::endl;                        // if A != 0, jump to end (final destreg value is 1)
             file<<"nop"<<std::endl;
             getB()->generate(file, "$t2", context);                             // evalute B
-            file<<"bne $t1, $t2, "<<endPoint<<std::endl;                        // if B != 0, jump to end (final destreg value is 1)
+            file<<"bne $t2, $zero, "<<endPoint<<std::endl;                        // if B != 0, jump to end (final destreg value is 1)
             file<<"nop"<<std::endl;
             file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
             file<<endPoint<<":"<<std::endl;
@@ -255,7 +261,14 @@ class LogicalNOT : public Condition {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            file<<"nor "<<std::string(destReg)<<", "<<std::string(destReg)<<", "<<std::string(destReg)<<std::endl;  // not achived by: nor $1, $1, $1
+            std::string endPoint = makeLabel("cond_not");
+            file<<"addiu "<<std::string(destReg)<<", $zero, 0"<<std::endl;      // addiu destReg, $zer0, 1 (set destReg to 1) 
+            getA()->generate(file, "$t1", context); 
+            file<<"bne $t1, $zero, "<<endPoint<<std::endl;                        // if A != 0, jump to end (final destreg value is 1)
+            file<<"nop"<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", $zero, 1"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+            file<<endPoint<<":"<<std::endl;
+
         }
 };
 

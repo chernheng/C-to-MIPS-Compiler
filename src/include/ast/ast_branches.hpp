@@ -52,7 +52,7 @@ class IfBlock : public Branch {
         }
 
         virtual long spaceRequired() const override {
-            long tmp = spaceRequired();
+            long tmp = getAction()->spaceRequired();
             tmp+=getCondition()->spaceRequired();
             if(getElseIf()!=nullptr)    {
                 tmp+=getElseIf()->spaceRequired();
@@ -73,9 +73,13 @@ class IfBlock : public Branch {
             else    {
                 dst<<"  {}"<<std::endl;
             }
+            if(getElseIf()!=nullptr)  {
+                getElseIf()->print(dst);
+            }          
             if(getElse()!=nullptr)  {
                 getElse()->print(dst);
-            }            
+            }
+            
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
@@ -142,7 +146,7 @@ class ElseIfBlock : public Branch {
         }
 
         virtual long spaceRequired() const override {
-            long tmp = spaceRequired();
+            long tmp = getAction()->spaceRequired();
             tmp+=getCondition()->spaceRequired();
             if(getNext()!=nullptr)  {
                 tmp+=getNext()->spaceRequired();
