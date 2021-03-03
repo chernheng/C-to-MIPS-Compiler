@@ -53,6 +53,10 @@ class IfBlock : public Branch {
 
         virtual long spaceRequired() const override {
             long tmp = spaceRequired();
+            tmp+=getCondition()->spaceRequired();
+            if(getElseIf()!=nullptr)    {
+                tmp+=getElseIf()->spaceRequired();
+            }
             if(getElse()!=nullptr)    {
                 tmp+=getElse()->spaceRequired();
             }
@@ -135,6 +139,15 @@ class ElseIfBlock : public Branch {
 
         ProgramPtr getNext() const  {
             return next;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp = spaceRequired();
+            tmp+=getCondition()->spaceRequired();
+            if(getNext()!=nullptr)  {
+                tmp+=getNext()->spaceRequired();
+            }
+            return tmp;
         }
 
         virtual void print(std::ostream &dst) const override    {
