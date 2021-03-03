@@ -20,7 +20,7 @@
   std::string *string;
 }
 
-%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE
+%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE KW_ELIF
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC
@@ -31,7 +31,7 @@
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION
-%type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT
+%type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK
 
 
 %start ROOT
@@ -94,20 +94,28 @@ LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
 
 WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $3; }
 
-BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                { $$ = new IfBlock($3,$5,nullptr); }
-       | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE                    { $$ = new IfBlock($3,$5,nullptr); }
-       | KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT ELSE_BLOCK     { $$ = new IfBlock($3,$5,$6); }
-       | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE ELSE_BLOCK         { $$ = new IfBlock($3,$5,$6); }
+BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                             { $$ = new IfBlock($3,$5,nullptr,nullptr); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE                                 { $$ = new IfBlock($3,$5,nullptr,nullptr); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT ELSE_BLOCK                  { $$ = new IfBlock($3,$5,nullptr,$6); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE ELSE_BLOCK                      { $$ = new IfBlock($3,$5,nullptr,$6); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT ELIF_BLOCK ELSE_BLOCK       { $$ = new IfBlock($3,$5,$6,$7); }
+       | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE ELIF_BLOCK ELSE_BLOCK           { $$ = new IfBlock($3,$5,$6,$7); }
+
+ELIF_BLOCK : KW_ELIF B_LBRACKET CONDITION B_RBRACKET STATEMENT                       { $$ = new ElseIfBlock($3,$5,nullptr); }
+           | KW_ELIF B_LBRACKET CONDITION B_RBRACKET SCOPE                           { $$ = new ElseIfBlock($3,$5,nullptr); }
+           | KW_ELIF B_LBRACKET CONDITION B_RBRACKET STATEMENT ELIF_BLOCK            { $$ = new ElseIfBlock($3,$5,$6); }
+           | KW_ELIF B_LBRACKET CONDITION B_RBRACKET SCOPE ELIF_BLOCK                { $$ = new ElseIfBlock($3,$5,$6); }
 
 ELSE_BLOCK : KW_ELSE STATEMENT    { $$ = new ElseBlock($2); }
            | KW_ELSE SCOPE        { $$ = new ElseBlock($2); }
+           |                      { $$ = nullptr; }
 
 FLOW : RETN SEMI_COLON                       { $$ = $1; }
      | KW_BREAK SEMI_COLON                   { $$ = new BreakStatement(); }
      | KW_CONTINUE SEMI_COLON                { $$ = new ContinueStatement(); }
 
 RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
-     | KW_RETURN MATH        { $$ = new ReturnStatement($2); }
+     | KW_RETURN MATH             { $$ = new ReturnStatement($2); }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 
