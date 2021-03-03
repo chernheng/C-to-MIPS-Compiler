@@ -31,8 +31,6 @@ struct Context {
     int isFunc=0;
     int isLoop=0;
     long LoopInitSP=0;
-    long LoopInitSL=0;
-    int LoopScopeCount=0;
 };
 
 

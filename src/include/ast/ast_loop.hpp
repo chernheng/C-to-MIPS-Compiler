@@ -26,6 +26,14 @@ class WhileLoop : public Loop {
     public:
         WhileLoop(ProgramPtr _condition, ProgramPtr _action) : Loop(_condition, _action)    {}
 
+        virtual long spaceRequired() const override {
+            long tmp = getCondition()->spaceRequired();
+            if(getAction()!=nullptr)    {
+                tmp+=getAction()->spaceRequired();
+            }
+            return tmp;
+        }
+
         virtual void print(std::ostream &dst) const override    {
             dst<<"while(";
             getCondition()->print(dst);
@@ -38,9 +46,7 @@ class WhileLoop : public Loop {
             std::string initLoopEnd = context->LoopEndPoint;
             int initialIsLoop = context->isLoop;            // info for break; to handle stack deallocation
             long initialLoopSP = context->LoopInitSP;
-            long initialLoopSL = context->LoopInitSL;
-            long initialLoopSC = context->LoopScopeCount;
-            context->LoopScopeCount = 0;
+            context->LoopInitSP = context->stack.size;
             context->isLoop=1;
             context->LoopStartPoint = makeLabel("Loop_Start");
             context->LoopEndPoint = makeLabel("Loop_End");
@@ -55,8 +61,6 @@ class WhileLoop : public Loop {
             context->LoopStartPoint = initLoopStart;        // restore context variables to their original values 
             context->LoopEndPoint = initLoopEnd;
             context->LoopInitSP = initialLoopSP;
-            context->LoopInitSL = initialLoopSL;
-            context->LoopScopeCount = initialLoopSC;
             context->isLoop = initialIsLoop;
         }
 };
