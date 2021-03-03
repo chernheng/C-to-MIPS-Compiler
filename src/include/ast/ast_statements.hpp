@@ -70,6 +70,7 @@ class ContinueStatement : public Program {
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             if(context->LoopStartPoint!="") {
+                file<<"addiu $sp, $sp, "<<(context->stack.size - context->LoopInitSP)<<std::endl;
                 file<<"b "<<context->LoopStartPoint<<std::endl;
                 file<<"nop"<<std::endl;
             }
