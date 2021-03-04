@@ -90,8 +90,8 @@ FUNC_DECLARATION : VAR_TYPE NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new D
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
      | WHILE_LOOP SCOPE         { $$ = new WhileLoop($1,$2); }
-    //  | FOR_LOOP STATEMENT       {}
-    //  | FOR_LOOP SCOPE           {}
+    //  | FOR_LOOP STATEMENT       { $$ = new ForLoop(); }       // ForLoop( initialization, condition, updateExpression, body);
+    //  | FOR_LOOP SCOPE           { $$ = new ForLoop(); }
 
 WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $3; }
 

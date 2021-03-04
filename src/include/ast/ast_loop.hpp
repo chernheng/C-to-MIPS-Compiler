@@ -65,15 +65,71 @@ class WhileLoop : public Loop {
         }
 };
 
-class ForLoop : public Loop  {
+class ForLoop : public Loop  {      // for(dec; cond; asn) {...}
+    private:
+        ProgramPtr dec;
+        ProgramPtr asn;        
     public:
-        ForLoop(ProgramPtr _condition, ProgramPtr _action) : Loop(_condition, _action)  {}
+        ForLoop(ProgramPtr _dec, ProgramPtr _condition, ProgramPtr _asn, ProgramPtr _action) : Loop(_condition, _action), dec(_dec), asn(_asn)  {}
+
+        virtual ~ForLoop()  {
+            delete dec;
+            delete asn;
+        }
 
         virtual void print(std::ostream &dst) const override    {
             dst<<"for(";
+            dec->print(dst);
+            dst<<";";
             getCondition()->print(dst);
+            dst<<";";
+            asn->print(dst);
             dst<<")"<<std::endl;
             getAction()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::unordered_map<std::string,varInfo> tmp;
+            std::string initLoopStart = context->LoopStartPoint;
+            std::string initLoopEnd = context->LoopEndPoint;
+            std::string entryPoint = makeLabel("for_entry_point");
+            context->LoopStartPoint = makeLabel("Loop_Start");
+            context->LoopEndPoint = makeLabel("Loop_End");
+            int initialIsLoop = context->isLoop;            // info for break; to handle stack deallocation
+            long initialLoopSP = context->LoopInitSP;
+            long initialStackSize = context->stack.size;
+            long initialSliderValue = context->stack.slider;
+            context->isLoop=1;
+            long scopeSize = dec->spaceRequired();          // allocate new scope on stack for loop conditional variable
+            context->stack.lut.push_back(tmp);
+            context->stack.slider = context->stack.size;
+            context->stack.size += scopeSize;
+            if(scopeSize>0) {
+                file<<"addiu $sp, $sp, -"<<scopeSize<<std::endl;
+            }
+            dec->generate(file, "$t4", context);            // declare for loop variable (dec)
+            file<<"b "<<entryPoint<<std::endl;              // jump to entry point
+            file<<"nop"<<std::endl;
+            file<<context->LoopStartPoint<<":"<<std::endl;  // for loop start point
+            asn->generate(file, "$t4", context);            // conditional variable assignment (asn)
+            file<<entryPoint<<":"<<std::endl;               // for loop entry point
+            getCondition()->generate(file, "$t6", context);     // loop condition
+            file<<"beq $t6, $zero, "<<context->LoopEndPoint<<std::endl;
+            file<<"nop"<<std::endl;
+            getAction()->generate(file, "$v0", context);
+            file<<"b "<<context->LoopStartPoint<<std::endl;     // jump to for loop start point
+            file<<"nop"<<std::endl;
+            file<<context->LoopEndPoint<<":"<<std::endl;        // for loop end point
+            if(scopeSize>0) {                                   // deallocate loop's scope from stack 
+                file<<"addiu $sp, $sp, "<<scopeSize<<std::endl;
+            }
+            context->stack.lut.pop_back();
+            context->LoopStartPoint = initLoopStart;        // restore context variables to their original values 
+            context->LoopEndPoint = initLoopEnd;
+            context->stack.size = initialStackSize;
+            context->stack.slider = initialSliderValue;
+            context->LoopInitSP = initialLoopSP;
+            context->isLoop = initialIsLoop;
         }
 };
 
