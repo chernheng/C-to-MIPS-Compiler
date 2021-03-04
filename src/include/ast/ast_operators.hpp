@@ -116,6 +116,18 @@ class MulOperator : public Operator {
         }
     public:
         MulOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"mult $t1, $t2"<<std::endl;
+            file<<"mflo "<<std::string(destReg)<<std::endl;
+        }
 };
 
 class DivOperator : public Operator {
@@ -125,6 +137,18 @@ class DivOperator : public Operator {
         }
     public:
         DivOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
+        
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"div $t1, $t2"<<std::endl;
+            file<<"mflo "<<std::string(destReg)<<std::endl;
+        }
 };
 
 class ModuloOperator : public Operator {
@@ -134,6 +158,18 @@ class ModuloOperator : public Operator {
         }
     public:
         ModuloOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"div $t1, $t2"<<std::endl;
+            file<<"mfhi "<<std::string(destReg)<<std::endl;
+        }
 };
 
 class RefOperator : public Operator {
@@ -147,6 +183,11 @@ class RefOperator : public Operator {
         virtual void print(std::ostream &dst) const override    {
             dst<<"&";
             getLeft()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            long offset = getLeft()->getOffset(context);
+            file<<"addiu "<<std::string(destReg)<<", $sp, "<<offset<<std::endl;
         }
 };
 
@@ -162,6 +203,11 @@ class DerefOperator : public Operator {
             dst<<"*";
             getLeft()->print(dst);
             dst<<"DEREF";
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            long offset = getLeft()->getOffset(context);
+            file<<"lw "<<std::string(destReg)<<", $sp, "<<offset<<std::endl;
         }
 };
 
