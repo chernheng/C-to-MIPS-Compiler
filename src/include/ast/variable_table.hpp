@@ -13,17 +13,27 @@ struct varInfo {
     int numBytes;  // number of bytes per element
     long length;  // number of elements
     int isFP=0;
+    long initValue=0;
     std::string type="";
+};
+
+struct functionInfo {
+    int argCount=0;
+    std::string returnType="";
+    std::vector<varInfo> args;
 };
 
 struct VarLUT {
     long size=0;
     long slider=0;
+    long FP=0;
     std::vector<std::unordered_map<std::string,varInfo>> lut;
 };
 
 struct Context {
     VarLUT stack;
+    std::unordered_map<std::string,functionInfo> ftable;
+    std::unordered_map<std::string,functionInfo>::iterator ftEntry;
     std::string LoopStartPoint="";
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";
@@ -31,6 +41,7 @@ struct Context {
     int isFunc=0;
     int isLoop=0;
     long LoopInitSP=0;
+    int ArgCount=0;
 };
 
 
