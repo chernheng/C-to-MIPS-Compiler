@@ -155,6 +155,11 @@ class FunctionDef : public Program {    // function definition
             std::unordered_map<std::string,varInfo> tempScope;
             context->stack.lut.push_back(tempScope);            // create scope on variable table for function arguments
 
+            file << "   .text"<<std::endl;
+            file << "   .globl	"<<getID()<<std::endl;
+            file << "   .ent	"<<getID()<<std::endl;
+            file << "   .type	"<<getID()<<", @function"<<std::endl;
+
             context->FuncRetnPoint = makeLabel("func_end");
             file<<getID()<<":"<<std::endl;                      // function start
          
@@ -188,6 +193,7 @@ class FunctionDef : public Program {    // function definition
             file<<"jr $ra"<<std::endl;                          // end of function, return to caller 
             file<<"nop"<<std::endl;
 
+            file << "    .end     "<<getID()<<std::endl;
             context->stack.lut.pop_back();                      // clear function argument scope
             context->isFunc=0;                                  // reload iniital context
             context->FuncRetnPoint = initFuncEnd;

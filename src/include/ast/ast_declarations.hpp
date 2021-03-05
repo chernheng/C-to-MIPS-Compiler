@@ -51,6 +51,7 @@ class DeclareVariable : public Program {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
+            long size = context->stack.lut.size();
             long offset = context->stack.slider;
             varInfo vf;
             vf.offset=offset;
@@ -66,7 +67,17 @@ class DeclareVariable : public Program {
                 vf.numBytes=1;
                 stackInc=1;
             }
+            if (size == 1){
+                file<<"   .globl  "<<getID()<<std::endl;
+                file<<"   .type   "<<getID()<<", @object"<<std::endl;
+                file<<"   .section        .bss,\"aw\",@nobits"<<std::endl;
+                file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
+                file<<getID()<<":"<<std::endl;
+            }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
+            if((init==nullptr)& (size==1)){
+                file<<"   .space   "<<vf.numBytes<<std::endl;
+            }
             if(init!=nullptr)   {
                 init->generate(file, "$t7", context);
                 if(stackInc==4) {
