@@ -90,19 +90,96 @@ class FunctionDefArgs : public FunctionArgs {
 class FunctionCallArgs : public FunctionArgs {
     public:
         FunctionCallArgs(ProgramPtr _action, FunctionArgs *_next) : FunctionArgs(_action, _next)   {}
+
+        virtual void print(std::ostream &dst) const override    {
+            action->print(dst);
+            if(next!=nullptr)   {
+                next->print(dst);
+            }
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp = action->spaceRequired();
+            if(next!=nullptr)   {
+                tmp+=next->spaceRequired();
+            }
+            return tmp;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            action->generate(file, "$t5", context);
+            if(context->ArgCount<4) {
+                file<<"move $a"<<context->ArgCount<<", $t5"<<std::endl;
+            }
+            else    {
+                file<<"sw $t5, "<<(4*context->ArgCount)<<"($sp)"<<std::endl;
+            }
+            context->ArgCount++;
+            if(next!=nullptr)   {
+                next->generate(file, destReg, context);
+            }
+        }
 };
 
-class Function : public Program {   // function call 
+class FunctionCall : public Program {   // function call 
     private:
         std::string id;
-        ProgramPtr args;
+        FunctionArgs *args=nullptr;
     public:
-        Function(std::string *_id) : id(*_id)   {
+        FunctionCall(std::string *_id, FunctionArgs *_args) : id(*_id), args(_args)   {
             delete _id;
+        }
+
+        virtual ~FunctionCall() {
+            delete args;
+        }
+        
+        virtual long spaceRequired() const override {
+            if(args!=nullptr)   {
+                long count = args->getCount();
+                long space = (4*count)+8;
+                if(space<24)    {               // set minimum space required to 20 bytes to accomodate $a0 - $a3 and some padding
+                    space=24;
+                }
+                space+=args->spaceRequired();
+                return space;
+            }
+            else    {
+                return 24;
+            }
         }
         
         virtual void print(std::ostream &dst) const override    {
-            dst<<id<<"();"<<std::endl;
+            dst<<id<<"(";
+            if(args!=nullptr)   {
+                args->print(dst);
+            }
+            dst<<");"<<std::endl;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            long initSL = context->stack.slider;    // store previous context
+            long RAoffset = context->stack.slider;
+            file<<"sw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;    // store $ra
+            file<<"addiu $sp, $sp, -4"<<std::endl;
+            context->stack.slider+=4;
+
+            if(args!=nullptr)   {                           // load arguments (if any)
+                context->ArgCount=0;
+                args->generate(file, "$t0", context);
+                context->ArgCount=0;
+            }
+
+            file<<".option pic0"<<std::endl;
+            file<<"jal "<<id<<std::endl;                    // call function
+            file<<"nop"<<std::endl;
+            file<<".option pic2"<<std::endl;
+            file<<"move "<<std::string(destReg)<<", $v0"<<std::endl;    // store return value into destReg
+
+            context->stack.slider-=4;
+            file<<"addiu $sp, $sp, 4"<<std::endl;
+            file<<"lw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;     // retore value of $ra
+            context->stack.slider = initSL;         // load previous context
         }
 };
 
@@ -135,12 +212,12 @@ class FunctionDef : public Program {    // function definition
             return type;
         }
 
-        // virtual long spaceRequired() const override {   // 5 ints needed: fp, a0, a1, a2 and a3 (deprecated)
-        //     return 20;
-        // }
-
         void print(std::ostream &dst) const override    {
-            dst<<getType()<<" "<<getID()<<"() ";
+            dst<<getType()<<" "<<getID()<<"(";
+            if(args!=nullptr)   {
+                args->print(dst);
+            }
+            dst<<") ";
             getAction()->print(dst);
         }
 

@@ -11,6 +11,7 @@ int main(int argc, char** argv)
     const Program *ast=parseAST(argv[2]);
     Context context;
     ast->generate(myfile,"$v0",&context);
+    std::cout<<"done compiling"<<std::endl;
     myfile.close();
     ast->print(std::cout);
     std::cout<<std::endl;

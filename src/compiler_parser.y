@@ -17,6 +17,7 @@
 %union{
   const Program *programPtr;
   FunctionDefArgs *fnDefArgs;
+  FunctionArgs *fnCallArgs;
   double number;
   std::string *string;
 }
@@ -34,6 +35,7 @@
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION 
 %type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT 
 %type <fnDefArgs> DEF_ARGS
+%type <fnCallArgs> CALL_ARGS
 
 
 %start ROOT
@@ -77,13 +79,19 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
         | BRANCH                    { $$ = $1; }
         | STATEMENT                 { $$ = $1; }
         | FLOW                      { $$ = $1; }
-        | FUNCTION                  { $$ = $1; }
+     //    | FUNCTION                  { $$ = $1; }
         | SCOPE                     { $$ = $1; }
 
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
 
-FUNCTION : NAME B_LBRACKET B_RBRACKET SEMI_COLON              { $$ = new Function($1); }   //call function (without storing return result) (no arguments)
+FUNCTION : NAME B_LBRACKET B_RBRACKET             { $$ = new FunctionCall($1,nullptr); }   //call function (without storing return result) (no arguments)
+         | NAME B_LBRACKET CALL_ARGS B_RBRACKET   { $$ = new FunctionCall($1,$3); }
+
+CALL_ARGS : MATH                                  { $$ = new FunctionCallArgs($1,nullptr); }
+          | FUNCTION                              { $$ = new FunctionCallArgs($1,nullptr); }
+          | MATH COMMA CALL_ARGS                  { $$ = new FunctionCallArgs($1,$3); }
+          | FUNCTION COMMA CALL_ARGS              { $$ = new FunctionCallArgs($1,$3); }
 
 DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
            | FUNC_DECLARATION        { $$ = $1; }   // function declaration
@@ -128,7 +136,8 @@ FLOW : RETN SEMI_COLON                       { $$ = $1; }
 RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
      | KW_RETURN MATH             { $$ = new ReturnStatement($2); }
 
-STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
+STATEMENT : FUNCTION SEMI_COLON     { $$ = $1; }
+          | ASSIGNMENT SEMI_COLON   { $$ = $1; }
           | INCREMENT SEMI_COLON    { $$ = $1; }
 
 STATE     : ASSIGNMENT   { $$ = $1; }
