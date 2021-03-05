@@ -116,7 +116,7 @@ class ForLoop : public Loop  {      // for(dec; cond; asn) {...}
             getCondition()->generate(file, "$t6", context);     // loop condition
             file<<"beq $t6, $zero, "<<context->LoopEndPoint<<std::endl;
             file<<"nop"<<std::endl;
-            getAction()->generate(file, "$v0", context);
+            getAction()->generate(file, destReg, context);
             file<<"b "<<context->LoopStartPoint<<std::endl;     // jump to for loop start point
             file<<"nop"<<std::endl;
             file<<context->LoopEndPoint<<":"<<std::endl;        // for loop end point

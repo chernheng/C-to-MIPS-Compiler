@@ -206,8 +206,8 @@ class DerefOperator : public Operator {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            long offset = getLeft()->getOffset(context);
-            file<<"lw "<<std::string(destReg)<<", $sp, "<<offset<<std::endl;
+            getLeft()->generate(file, "$t1", context);
+            file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
         }
 };
 
@@ -218,6 +218,17 @@ class BitANDOperator : public Operator {
         }
     public:
         BitANDOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"and "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+        }
 };
 
 class BitOROperator : public Operator {
@@ -227,6 +238,17 @@ class BitOROperator : public Operator {
         }
     public:
         BitOROperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)     {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"or "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+        }
 };
 
 class BitXOROperator : public Operator {
@@ -236,6 +258,17 @@ class BitXOROperator : public Operator {
         }
     public:
         BitXOROperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"xor "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+        }
 };
 
 class BitNOTOperator : public Operator {
@@ -249,6 +282,11 @@ class BitNOTOperator : public Operator {
         virtual void print(std::ostream &dst) const override    {
             dst<<"~";
             getLeft()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, destReg, context);
+            file<<"nor "<<std::string(destReg)<<", "<<std::string(destReg)<<", "<<std::string(destReg)<<std::endl;
         }
 };
 
@@ -264,6 +302,11 @@ class NegOperator : public Operator {
             dst<<"-";
             getLeft()->print(dst);
         }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            file<<"subu "<<std::string(destReg)<<", $zero, $t1"<<std::endl;
+        }
 };
 
 class LeftShiftOperator : public Operator {
@@ -273,6 +316,17 @@ class LeftShiftOperator : public Operator {
         }
     public:
         LeftShiftOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"sllv "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+        }
 };
 
 class RightShiftOperator : public Operator {
@@ -282,6 +336,17 @@ class RightShiftOperator : public Operator {
         }
     public:
         RightShiftOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t1", context);
+            long ofs = context->stack.slider;
+            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getRight()->generate(file, "$t2", context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file<<"srav "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+        }
 };
 
 class IncOperator : public Operator {   // i++
@@ -299,14 +364,14 @@ class IncOperator : public Operator {   // i++
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t0", context);
-            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
-            file<<"addiu $t0, $t0, 1"<<std::endl;
+            file<<"addiu $t1, $t0, 1"<<std::endl;
             if(getLeft()->getVarType(context)=="int")  {
-                file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
             }
             else if(getLeft()->getVarType(context)=="char")    {
-                file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
             }
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -326,6 +391,58 @@ class DecOperator : public Operator {   // i--
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t0", context);
             file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+            file<<"addiu $t1, $t0, -1"<<std::endl;
+            if(getLeft()->getVarType(context)=="int")  {
+                file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            else if(getLeft()->getVarType(context)=="char")    {
+                file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+        }
+};
+
+class IncAfterOperator : public Operator {   // ++i
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "++";
+        }  
+    public:
+        IncAfterOperator(ProgramPtr _left) : Operator(_left,nullptr) {}
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"++";
+            getLeft()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t0", context);
+            file<<"addiu $t0, $t0, 1"<<std::endl;
+            if(getLeft()->getVarType(context)=="int")  {
+                file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            else if(getLeft()->getVarType(context)=="char")    {
+                file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+        }
+};
+
+class DecAfterOperator : public Operator {   // --i
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "--";
+        }  
+    public:
+        DecAfterOperator(ProgramPtr _left) : Operator(_left,nullptr) {}
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"--";
+            getLeft()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getLeft()->generate(file, "$t0", context);
             file<<"addiu $t0, $t0, -1"<<std::endl;
             if(getLeft()->getVarType(context)=="int")  {
                 file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
@@ -333,6 +450,7 @@ class DecOperator : public Operator {   // i--
             else if(getLeft()->getVarType(context)=="char")    {
                 file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
             }
+            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 

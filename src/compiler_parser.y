@@ -29,9 +29,9 @@
 %type <string> NAME VAR_TYPE NUMBER
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
-%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN
-%type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION
-%type <programPtr> MATH WHILE_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK
+%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE
+%type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION 
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT 
 
 
 %start ROOT
@@ -73,7 +73,6 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
         | FLOW                      { $$ = $1; }
         | FUNCTION                  { $$ = $1; }
         | SCOPE                     { $$ = $1; }
-        | NEG SEMI_COLON            { $$ = $1; }
 
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
@@ -90,8 +89,12 @@ FUNC_DECLARATION : VAR_TYPE NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new D
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
      | WHILE_LOOP SCOPE         { $$ = new WhileLoop($1,$2); }
-    //  | FOR_LOOP STATEMENT       { $$ = new ForLoop(); }       // ForLoop( initialization, condition, updateExpression, body);
-    //  | FOR_LOOP SCOPE           { $$ = new ForLoop(); }
+     | FOR_LOOP                 { $$ = $1; }       // ForLoop( initialization, condition, updateExpression, body);
+
+FOR_LOOP : KW_FOR B_LBRACKET VAR_DECLARATION CONDITION SEMI_COLON STATE B_RBRACKET STATEMENT   { $$ = new ForLoop($3,$4,$6,$8); } //for(int i=0;i<0;i++)
+         | KW_FOR B_LBRACKET VAR_DECLARATION CONDITION SEMI_COLON STATE B_RBRACKET SCOPE   { $$ = new ForLoop($3,$4,$6,$8);}
+         | KW_FOR B_LBRACKET ASSIGNMENT SEMI_COLON CONDITION SEMI_COLON STATE B_RBRACKET STATEMENT   { $$ = new ForLoop($3,$5,$7,$9); } //for(int i=0;i<0;i++)
+         | KW_FOR B_LBRACKET ASSIGNMENT SEMI_COLON CONDITION SEMI_COLON STATE B_RBRACKET SCOPE   { $$ = new ForLoop($3,$5,$7,$9);}
 
 WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $3; }
 
@@ -109,7 +112,6 @@ ELIF_BLOCK : KW_ELIF B_LBRACKET CONDITION B_RBRACKET STATEMENT                  
 
 ELSE_BLOCK : KW_ELSE STATEMENT    { $$ = new ElseBlock($2); }
            | KW_ELSE SCOPE        { $$ = new ElseBlock($2); }
-           |                      { $$ = nullptr; }
 
 FLOW : RETN SEMI_COLON                       { $$ = $1; }
      | KW_BREAK SEMI_COLON                   { $$ = new BreakStatement(); }
@@ -119,6 +121,10 @@ RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
      | KW_RETURN MATH             { $$ = new ReturnStatement($2); }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
+          | INCREMENT SEMI_COLON    { $$ = $1; }
+
+STATE     : ASSIGNMENT   { $$ = $1; }
+          | INCREMENT    { $$ = $1; }
 
 ASSIGNMENT : VARIABLE OP_EQUAL FUNCTION     { $$ = new AssignmentOperator($1,$3); }
            | VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
@@ -150,14 +156,18 @@ TERM : NEG      { $$ = $1; }
      | TERM OP_DIVIDE NEG         { $$ = new DivOperator($1, $3); }
      | TERM OP_MODULO NEG         { $$ = new ModuloOperator($1, $3);}
 
-NEG : FACTOR        { $$ = $1; }
+NEG : INCREMENT        { $$ = $1; }
     | OP_NOT NEG {$$ = new BitNOTOperator($2);}
     | COND_NOT NEG {$$ = new LogicalNOT($2);}
     | OP_MINUS NEG %prec MINUS {$$ = new NegOperator($2);}
     | OP_REF NEG %prec REF {$$ = new RefOperator($2);}
     | OP_TIMES NEG %prec DEREF {$$ = new DerefOperator($2);}
-    | NEG OP_INC {$$ = new IncOperator($1);}
-    | NEG OP_DEC {$$ = new DecOperator($1);}
+
+INCREMENT : FACTOR   { $$ = $1; }
+          | INCREMENT OP_INC {$$ = new IncOperator($1);}
+          | INCREMENT OP_DEC {$$ = new DecOperator($1);}
+          | OP_INC INCREMENT {$$ = new IncAfterOperator($2);}
+          | OP_DEC INCREMENT {$$ = new DecAfterOperator($2);}
 
 FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number

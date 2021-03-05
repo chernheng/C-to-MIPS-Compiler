@@ -25,3 +25,9 @@ int main(int argc, char** argv)
 
     return 0;
 }
+//global var macros
+    // myfile<<"   .globl  b"<<std::endl;
+    // myfile<<"   .type   b, @object"<<std::endl;
+    // myfile<<"   .size   b, 4"<<std::endl;
+    // myfile<<"b:"<<std::endl;
+    // myfile<<"   .word   35"<<std::endl;
