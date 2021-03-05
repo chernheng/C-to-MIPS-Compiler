@@ -20,7 +20,7 @@ struct varInfo {
 struct functionInfo {
     int argCount=0;
     std::string returnType="";
-    std::vector<varInfo> args;
+    std::vector<varInfo> argList;
 };
 
 struct VarLUT {

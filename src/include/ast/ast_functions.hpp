@@ -76,7 +76,7 @@ class FunctionDefArgs : public FunctionArgs {
                 vf.numBytes=1;
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
-            context->ftEntry->second.args.push_back(vf);
+            context->ftEntry->second.argList.push_back(vf);
             if(context->ArgCount<4) {
                 file<<"sw $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
             }
@@ -113,7 +113,7 @@ class FunctionDef : public Program {    // function definition
         FunctionDefArgs *args=nullptr; //function arguments
         ProgramPtr action; //the scope of the function
     public:
-        FunctionDef(std::string *_type, std::string *_id, ProgramPtr _action) : type(*_type), id(*_id), args(nullptr), action(_action)    {
+        FunctionDef(std::string *_type, std::string *_id, FunctionDefArgs *_args, ProgramPtr _action) : type(*_type), id(*_id), args(_args), action(_action)    {
             delete _type;
             delete _id;
         }  
@@ -135,7 +135,7 @@ class FunctionDef : public Program {    // function definition
             return type;
         }
 
-        // virtual long spaceRequired() const override {   // 5 ints needed: fp, a0, a1, a2 and a3
+        // virtual long spaceRequired() const override {   // 5 ints needed: fp, a0, a1, a2 and a3 (deprecated)
         //     return 20;
         // }
 
@@ -154,9 +154,6 @@ class FunctionDef : public Program {    // function definition
 
             std::unordered_map<std::string,varInfo> tempScope;
             context->stack.lut.push_back(tempScope);            // create scope on variable table for function arguments
-            if(args!=nullptr)   {
-                args->generate(file, destReg, context);         // load argument variable info to scope variable table
-            }
 
             context->FuncRetnPoint = makeLabel("func_end");
             file<<getID()<<":"<<std::endl;                      // function start
@@ -170,13 +167,13 @@ class FunctionDef : public Program {    // function definition
             std::unordered_map<std::string,functionInfo>::iterator it;  // add function to declared functions table
             it=context->ftable.find(getID());
             if(it==context->ftable.end())   {                           // function not already in table
-                context->ftEntry = it;
                 functionInfo tmp;
                 context->ftable.insert(std::pair<std::string,functionInfo>(getID(),tmp));
                 it=context->ftable.find(getID());
                 it->second.returnType = getType();
             }            
-            if(args!=nullptr)   {                                       // load arguments (if any)
+            context->ftEntry = context->ftable.find(getID());
+            if(args!=nullptr)   {                                       // load arguments info into variable scope table (if any)
                 context->ArgCount=0;
                 it->second.argCount = args->getCount();
                 args->generate(file, "$t0", context);

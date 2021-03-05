@@ -16,6 +16,7 @@
 // AST node.
 %union{
   const Program *programPtr;
+  FunctionDefArgs *fnDefArgs;
   double number;
   std::string *string;
 }
@@ -24,7 +25,7 @@
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC
-%token SEMI_COLON NAME NUMBER VAR_TYPE
+%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA
 
 %type <string> NAME VAR_TYPE NUMBER
 
@@ -32,6 +33,7 @@
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION 
 %type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT 
+%type <fnDefArgs> DEF_ARGS
 
 
 %start ROOT
@@ -61,7 +63,11 @@ MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }    //int x
          | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }         //multiple lines
          | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
 
-FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE      {$$ = new FunctionDef($1,$2,$5); }   // definition  (no arguments)
+FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE               { $$ = new FunctionDef($1,$2,nullptr,$5); }
+             | VAR_TYPE NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($1,$2,$4,$6); }   // definition  (no arguments)
+
+DEF_ARGS : VAR_TYPE NAME                     { $$ = new FunctionDefArgs($1,$2,nullptr); }
+         | VAR_TYPE NAME COMMA DEF_ARGS      { $$ = new FunctionDefArgs($1,$2,$4); }
 
 COMMAND_SEQ : COMMAND               { $$ = new Command($1,nullptr); }
             | COMMAND COMMAND_SEQ   { $$ = new Command($1,$2); }

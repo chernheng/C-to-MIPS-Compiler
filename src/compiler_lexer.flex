@@ -53,6 +53,7 @@ continue        { return KW_CONTINUE;}
 "++"            { return OP_INC;}
 "--"            { return OP_DEC;}
 
+","             { return COMMA;}
 [;]             { return SEMI_COLON;}
 
 [0-9]+([.][0-9]*)?      { yylval.string= new std::string(yytext); return NUMBER; }
