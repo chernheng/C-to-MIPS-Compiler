@@ -10,9 +10,10 @@ std::string makeLabel(const char* _name);
 
 struct varInfo {
     long offset;
-    int numBytes;  // number of bytes per element
-    long length;  // number of elements
+    int numBytes=0;  // number of bytes per element
+    long length=0;  // number of elements
     int isFP=0;
+    int isPtr=0;
     long initValue=0;
     std::string type="";
 };
@@ -38,6 +39,7 @@ struct Context {
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";
     std::string FuncRetnPoint="";
+    varInfo tempVarInfo;
     int isFunc=0;
     int isLoop=0;
     long LoopInitSP=0;

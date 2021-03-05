@@ -9,13 +9,14 @@ class DeclareVariable : public Program {
         std::string type;
         std::string id;
         ProgramPtr init=nullptr; //int x = 5;
+        int ptr=0;
     public:
-        DeclareVariable(std::string *_type, std::string *_id, ProgramPtr _init) : type(*_type), id(*_id), init(_init)  {
+        DeclareVariable(std::string *_type, std::string *_id, ProgramPtr _init, int _ptr) : type(*_type), id(*_id), init(_init), ptr(_ptr)  {
             delete _type;
             delete _id;
         }
 
-        DeclareVariable(std::string *_type, std::string *_id) : type(*_type),id(*_id)   {
+        DeclareVariable(std::string *_type, std::string *_id, int _ptr) : type(*_type),id(*_id), ptr(_ptr)   {
             delete _type;
             delete _id;
         }
@@ -30,6 +31,10 @@ class DeclareVariable : public Program {
 
         std::string getType() const {
             return type;
+        }
+        
+        int getPtr() const {
+            return ptr;
         }
 
         virtual void print(std::ostream &dst) const override    {
@@ -56,6 +61,7 @@ class DeclareVariable : public Program {
             varInfo vf;
             vf.offset=offset;
             vf.length=1;
+            vf.isPtr =getPtr();
             int stackInc=0;
             if(getType()=="int")    {
                 vf.type="int";

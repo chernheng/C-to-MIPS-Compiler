@@ -57,6 +57,7 @@ class Variable : public Program {
                 }
             }
             if(it!=context->stack.lut.at(wtf).end()) {
+                context->tempVarInfo = it->second;
                 long offset = context->stack.size - it->second.offset;
                 if(it->second.type=="int")  {                
                     file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
@@ -113,6 +114,8 @@ class Number : public Program {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            varInfo tmp;
+            context->tempVarInfo = tmp;
             file<<"li "<<std::string(destReg)<<", "<<getValue()<<std::endl;     // li {destReg}, {value}
         }
 };
