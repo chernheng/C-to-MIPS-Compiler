@@ -4,9 +4,98 @@
 #include "variable_table.hpp"
 std::string makeLabel(const char* _name);
 
+class FunctionArgs : public Program {
+    protected:
+        ProgramPtr action;
+        FunctionArgs *next=nullptr;
+    public:
+        FunctionArgs(ProgramPtr _action, FunctionArgs *_next) : action(_action), next(_next)   {}
+
+        virtual ~FunctionArgs() {
+            delete action;
+            delete next;
+        }
+
+        virtual long getCount() const   {
+            if(next!=nullptr)   {
+                return 1+next->getCount();
+            }
+            else    {
+                return 1;
+            }
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            action->print(dst);
+            if(next!=nullptr)   {
+                next->print(dst);
+            }
+        }
+};
+
+class FunctionDefArgs : public FunctionArgs {
+    private:
+        std::string type;
+        std::string id;
+    public:
+        FunctionDefArgs(std::string *_type, std::string *_id, FunctionArgs *_next) : FunctionArgs(nullptr, _next), type(*_type), id(*_id)    {
+            delete _type;
+            delete _id;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp=0;
+            if(type=="int" || type=="char")  {
+                tmp=4;
+            }
+            if(next!=nullptr)   {
+                tmp+=next->spaceRequired();
+            }
+            return tmp;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<type<<" "<<id;
+            if(next!=nullptr)   {
+                dst<<", ";
+                next->print(dst);
+            }
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            varInfo vf;
+            long delta = context->stack.FP - (4*context->ArgCount);
+            vf.offset=delta;
+            vf.type=type;
+            if(type=="int") {
+                vf.length=1;
+                vf.numBytes=4;
+            }
+            else if(type=="char")   {
+                vf.length=1;
+                vf.numBytes=1;
+            }
+            context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
+            context->ftEntry->second.args.push_back(vf);
+            if(context->ArgCount<4) {
+                file<<"sw $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+            }
+            context->ArgCount++;
+            if(next!=nullptr)   {
+                next->generate(file, destReg,context);
+            }
+        }
+};
+
+class FunctionCallArgs : public FunctionArgs {
+    public:
+        FunctionCallArgs(ProgramPtr _action, FunctionArgs *_next) : FunctionArgs(_action, _next)   {}
+};
+
 class Function : public Program {   // function call 
     private:
         std::string id;
+        ProgramPtr args;
     public:
         Function(std::string *_id) : id(*_id)   {
             delete _id;
@@ -21,14 +110,16 @@ class FunctionDef : public Program {    // function definition
     private:
         std::string type; // return type of function
         std::string id; // name of function
+        FunctionDefArgs *args=nullptr; //function arguments
         ProgramPtr action; //the scope of the function
     public:
-        FunctionDef(std::string *_type, std::string *_id, ProgramPtr _action) : type(*_type), id(*_id), action(_action)    {
+        FunctionDef(std::string *_type, std::string *_id, ProgramPtr _action) : type(*_type), id(*_id), args(nullptr), action(_action)    {
             delete _type;
             delete _id;
         }  
 
-        ~FunctionDef() {
+        virtual ~FunctionDef() {
+            delete args;
             delete action;
         }
 
@@ -54,31 +145,86 @@ class FunctionDef : public Program {    // function definition
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            long initSP = context->stack.size;
+            long initSP = context->stack.size;                  // store initial context
             long initSL = context->stack.slider;
-            long preSpace=4;                                    // space (in bytes) needed for FP and arguments
+            long initFP = context->stack.FP;
             std::string initFuncEnd = context->FuncRetnPoint;
-            std::string returnPoint = makeLabel("func_end");
-            context->FuncRetnPoint = returnPoint;
             context->isFunc=1;
-            file<<getID()<<":"<<std::endl;                   // start of function
+            context->stack.FP = context->stack.size;                    // set FP tracker to start of current stack frame
+
+            std::unordered_map<std::string,varInfo> tempScope;
+            context->stack.lut.push_back(tempScope);            // create scope on variable table for function arguments
+            if(args!=nullptr)   {
+                args->generate(file, destReg, context);         // load argument variable info to scope variable table
+            }
+
+            context->FuncRetnPoint = makeLabel("func_end");
+            file<<getID()<<":"<<std::endl;                      // function start
+         
+            context->stack.size+=8;                            // allocate 8 bytes for $fp + padding, set context FP to old SP value
             context->stack.slider = context->stack.size;
-            context->stack.size += preSpace;                 // allocate space for $fp (and arguments too [implement later])
-            file<<"addiu $sp, $sp, -"<<preSpace<<std::endl;
-            long initFP = context->stack.slider;
-            context->stack.slider+=4;
-            file<<"sw $fp, "<<(context->stack.size - initFP)<<"($sp)"<<std::endl;   // store $fp
+            file<<"addiu $sp, $sp, -8"<<std::endl;             // allocate stack space for $fp
+            file<<"sw $fp, 4($sp)"<<std::endl;
             file<<"move $fp, $sp"<<std::endl;
-            action->generate(file, destReg, context);   // run action
-            file<<"move $sp, $fp"<<std::endl;
-            file<<"lw $fp, "<<(context->stack.size - initFP)<<"($sp)"<<std::endl;
-            file<<"addiu $sp, $sp, "<<preSpace<<std::endl;     // deallocate space used for FP and arguments
-            file<<"jr $ra"<<std::endl;                         // end of function, return to caller 
+
+            std::unordered_map<std::string,functionInfo>::iterator it;  // add function to declared functions table
+            it=context->ftable.find(getID());
+            if(it==context->ftable.end())   {                           // function not already in table
+                context->ftEntry = it;
+                functionInfo tmp;
+                context->ftable.insert(std::pair<std::string,functionInfo>(getID(),tmp));
+                it=context->ftable.find(getID());
+                it->second.returnType = getType();
+            }            
+            if(args!=nullptr)   {                                       // load arguments (if any)
+                context->ArgCount=0;
+                it->second.argCount = args->getCount();
+                args->generate(file, "$t0", context);
+                context->ArgCount=0;
+            }
+
+            action->generate(file, destReg, context);           // run function code
+
+            file<<"move $sp, $fp"<<std::endl;                   // deallocate stack space for $fp
+            file<<"lw $fp, 4($sp)"<<std::endl;
+            file<<"addiu $sp, $sp, 8"<<std::endl;
+            file<<"jr $ra"<<std::endl;                          // end of function, return to caller 
             file<<"nop"<<std::endl;
+
+            context->stack.lut.pop_back();                      // clear function argument scope
+            context->isFunc=0;                                  // reload iniital context
             context->FuncRetnPoint = initFuncEnd;
             context->stack.slider = initSL;
             context->stack.size = initSP;
+            context->stack.FP = initFP;
         }
+
+        // virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+        //     long initSP = context->stack.size;
+        //     long initSL = context->stack.slider;
+        //     long preSpace=4;                                    // space (in bytes) needed for FP and arguments
+        //     std::string initFuncEnd = context->FuncRetnPoint;
+        //     std::string returnPoint = makeLabel("func_end");
+        //     context->FuncRetnPoint = returnPoint;
+        //     context->isFunc=1;
+        //     file<<getID()<<":"<<std::endl;                   // start of function
+        //     context->stack.slider = context->stack.size;
+        //     context->stack.size += preSpace;                 // allocate space for $fp (and arguments too [implement later])
+        //     file<<"addiu $sp, $sp, -"<<preSpace<<std::endl;
+        //     long initFP = context->stack.slider;
+        //     context->stack.slider+=4;
+        //     file<<"sw $fp, "<<(context->stack.size - initFP)<<"($sp)"<<std::endl;   // store $fp
+        //     file<<"move $fp, $sp"<<std::endl;
+        //     action->generate(file, destReg, context);   // run action
+        //     file<<"move $sp, $fp"<<std::endl;
+        //     file<<"lw $fp, "<<(context->stack.size - initFP)<<"($sp)"<<std::endl;
+        //     file<<"addiu $sp, $sp, "<<preSpace<<std::endl;     // deallocate space used for FP and arguments
+        //     file<<"jr $ra"<<std::endl;                         // end of function, return to caller 
+        //     file<<"nop"<<std::endl;
+        //     context->FuncRetnPoint = initFuncEnd;
+        //     context->stack.slider = initSL;
+        //     context->stack.size = initSP;
+        // }
 };
 
 #endif
