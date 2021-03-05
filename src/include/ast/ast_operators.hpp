@@ -122,10 +122,21 @@ class SubOperator : public Operator {
             long ofs = context->stack.slider;
             file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
             context->stack.slider+=4;
+            varInfo varLeft = context->tempVarInfo;
             getRight()->generate(file, "$t2", context);
-            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-            context->stack.slider-=4;
-            file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+            varInfo varRight = context->tempVarInfo;
+            if (varLeft.isPtr==1 && varLeft.numBytes > 1 && varRight.isPtr==0) {
+                file<<"li $t3, "<<varLeft.numBytes<<std::endl;
+                file<<"mult $t2, $t3"<<std::endl;
+                file<<"mflo $t2"<<std::endl;
+                file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                context->stack.slider-=4;
+                file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+            } else{
+                file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                context->stack.slider-=4;
+                file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+            }
         }
 };
 
@@ -392,7 +403,12 @@ class IncOperator : public Operator {   // i++
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t0", context);
-            file<<"addiu $t1, $t0, 1"<<std::endl;
+            if(context->tempVarInfo.isPtr==1){
+                file<<"addiu $t1, $t0, "<<context->tempVarInfo.numBytes<<std::endl;
+            }else {
+                file<<"addiu $t1, $t0, 1"<<std::endl;
+            }
+            
             if(getLeft()->getVarType(context)=="int")  {
                 file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
             }
@@ -418,8 +434,11 @@ class DecOperator : public Operator {   // i--
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t0", context);
-            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
-            file<<"addiu $t1, $t0, -1"<<std::endl;
+            if(context->tempVarInfo.isPtr==1){
+                file<<"addiu $t1, $t0, -"<<context->tempVarInfo.numBytes<<std::endl;
+            }else {
+                file<<"addiu $t1, $t0, -1"<<std::endl;
+            }
             if(getLeft()->getVarType(context)=="int")  {
                 file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
             }
@@ -445,7 +464,11 @@ class IncAfterOperator : public Operator {   // ++i
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t0", context);
-            file<<"addiu $t0, $t0, 1"<<std::endl;
+            if(context->tempVarInfo.isPtr==1){
+                file<<"addiu $t0, $t0, "<<context->tempVarInfo.numBytes<<std::endl;
+            }else {
+                file<<"addiu $t0, $t0, 1"<<std::endl;
+            }
             if(getLeft()->getVarType(context)=="int")  {
                 file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
             }
@@ -471,7 +494,11 @@ class DecAfterOperator : public Operator {   // --i
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t0", context);
-            file<<"addiu $t0, $t0, -1"<<std::endl;
+            if(context->tempVarInfo.isPtr==1){
+                file<<"addiu $t0, $t0, -"<<context->tempVarInfo.numBytes<<std::endl;
+            }else {
+                file<<"addiu $t0, $t0, -1"<<std::endl;
+            }
             if(getLeft()->getVarType(context)=="int")  {
                 file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
             }

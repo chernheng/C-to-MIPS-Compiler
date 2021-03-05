@@ -47,6 +47,21 @@ if [[ "$?" -ne "0" ]]; then
     exit 1;
 fi
 
+if [ $1 -eq 2 ] ; then
+
+    echo "========================================"
+    echo "Compiling tests"
+    FILES=$(ls -1 compiler_tests/$2 | grep -v driver | cut -d "." -f 1)
+    for i in $FILES; do
+        bin/c_compiler -S compiler_tests/$2/${i}.c -o temp/${i}.s
+        mips-linux-gnu-gcc -mfp32 -o temp/${i}.o -c temp/${i}.s
+        mips-linux-gnu-gcc -mfp32 -static -o temp/${i} temp/${i}.o compiler_tests/$2/${i}_driver.c
+        qemu-mips temp/${i}
+        echo "Exit code: $?"
+    done
+    exit 0;
+fi
+
 echo "========================================"
 
 bin/c_compiler -S dev/test.c -o dev/output.s

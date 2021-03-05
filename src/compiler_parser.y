@@ -65,8 +65,26 @@ MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }    //int x
          | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }         //multiple lines
          | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
 
+DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
+           | FUNC_DECLARATION        { $$ = $1; }   // function declaration
+
+VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
+                | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
+                | VAR_TYPE OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
+                | VAR_TYPE OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1); } //int *x = &f;
+
+FUNC_DECLARATION : VAR_TYPE NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new DeclareFunction($1,$2); }
+
 FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE               { $$ = new FunctionDef($1,$2,nullptr,$5); }
              | VAR_TYPE NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($1,$2,$4,$6); }   // definition  (no arguments)
+
+FUNCTION : NAME B_LBRACKET B_RBRACKET             { $$ = new FunctionCall($1,nullptr); }   //call function (without storing return result) (no arguments)
+         | NAME B_LBRACKET CALL_ARGS B_RBRACKET   { $$ = new FunctionCall($1,$3); }
+
+CALL_ARGS : MATH                                  { $$ = new FunctionCallArgs($1,nullptr); }
+          | FUNCTION                              { $$ = new FunctionCallArgs($1,nullptr); }
+          | MATH COMMA CALL_ARGS                  { $$ = new FunctionCallArgs($1,$3); }
+          | FUNCTION COMMA CALL_ARGS              { $$ = new FunctionCallArgs($1,$3); }
 
 DEF_ARGS : VAR_TYPE NAME                     { $$ = new FunctionDefArgs($1,$2,nullptr); }
          | VAR_TYPE NAME COMMA DEF_ARGS      { $$ = new FunctionDefArgs($1,$2,$4); }
@@ -85,23 +103,6 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
 
-FUNCTION : NAME B_LBRACKET B_RBRACKET             { $$ = new FunctionCall($1,nullptr); }   //call function (without storing return result) (no arguments)
-         | NAME B_LBRACKET CALL_ARGS B_RBRACKET   { $$ = new FunctionCall($1,$3); }
-
-CALL_ARGS : MATH                                  { $$ = new FunctionCallArgs($1,nullptr); }
-          | FUNCTION                              { $$ = new FunctionCallArgs($1,nullptr); }
-          | MATH COMMA CALL_ARGS                  { $$ = new FunctionCallArgs($1,$3); }
-          | FUNCTION COMMA CALL_ARGS              { $$ = new FunctionCallArgs($1,$3); }
-
-DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
-           | FUNC_DECLARATION        { $$ = $1; }   // function declaration
-
-VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
-                | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
-                | VAR_TYPE OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
-                | VAR_TYPE OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1); } //int *x = &f;
-
-FUNC_DECLARATION : VAR_TYPE NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new DeclareFunction($1,$2); }
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
      | WHILE_LOOP SCOPE         { $$ = new WhileLoop($1,$2); }
