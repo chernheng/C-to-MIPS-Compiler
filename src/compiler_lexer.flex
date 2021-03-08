@@ -20,6 +20,9 @@ for             { return KW_FOR;}
 return          { return KW_RETURN;}
 break           { return KW_BREAK;}
 continue        { return KW_CONTINUE;}
+switch          { return KW_SWITCH;}
+case            { return KW_CASE;}
+default         { return KW_DEFAULT;}
 
 "{"             { return B_LCURLY;}
 "}"             { return B_RCURLY;}
@@ -54,6 +57,7 @@ continue        { return KW_CONTINUE;}
 "--"            { return OP_DEC;}
 
 ","             { return COMMA;}
+"\:"             { return COLON;}
 [;]             { return SEMI_COLON;}
 
 [0-9]+([.][0-9]*)?      { yylval.string= new std::string(yytext); return NUMBER; }

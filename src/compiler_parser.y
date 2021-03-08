@@ -22,16 +22,16 @@
   std::string *string;
 }
 
-%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE KW_ELIF
+%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE KW_ELIF KW_SWITCH KW_CASE KW_DEFAULT
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC
-%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA
+%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON
 
 %type <string> NAME VAR_TYPE NUMBER
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
-%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE
+%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH CASE
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION 
 %type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT 
 %type <fnDefArgs> DEF_ARGS
@@ -99,9 +99,11 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
         | FLOW                      { $$ = $1; }
      //    | FUNCTION                  { $$ = $1; }
         | SCOPE                     { $$ = $1; }
+        | SWITCH                    { $$ = $1;}
 
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
+      | B_LCURLY CASE B_RCURLY   { $$ = new Scope($2); }
 
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
@@ -114,6 +116,11 @@ FOR_LOOP : KW_FOR B_LBRACKET VAR_DECLARATION CONDITION SEMI_COLON STATE B_RBRACK
          | KW_FOR B_LBRACKET ASSIGNMENT SEMI_COLON CONDITION SEMI_COLON STATE B_RBRACKET SCOPE   { $$ = new ForLoop($3,$5,$7,$9);}
 
 WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $3; }
+
+SWITCH : KW_SWITCH B_LBRACKET MATH B_RBRACKET SCOPE      {$$ = new SwitchBlock($3,$5);}
+
+CASE : KW_CASE FACTOR COLON COMMAND_SEQ CASE          { $$ = new CaseBlock{$2,$4,$5,nullptr};}
+     | KW_CASE FACTOR COLON COMMAND_SEQ KW_DEFAULT COLON COMMAND_SEQ   { $$ = new CaseBlock{$2,$4,nullptr,$7};} //end of the case
 
 BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                             { $$ = new IfBlock($3,$5,nullptr,nullptr); }
        | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE                                 { $$ = new IfBlock($3,$5,nullptr,nullptr); }

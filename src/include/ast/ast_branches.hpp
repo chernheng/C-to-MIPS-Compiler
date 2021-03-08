@@ -186,4 +186,166 @@ class ElseIfBlock : public Branch {
         }
 };
 
+class SwitchBlock : public Branch {
+    private:
+        ProgramPtr expr;
+        ProgramPtr casePtr=nullptr;
+    public:
+        SwitchBlock(ProgramPtr _expr, ProgramPtr _casePtr) : Branch(nullptr), expr(_expr),casePtr(_casePtr) {}
+
+        ~SwitchBlock()  {
+            delete expr;
+            delete casePtr;
+        }
+
+        ProgramPtr getExpr() const {
+            return expr;
+        }
+
+        ProgramPtr getCasePtr() const    {
+            return casePtr;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp = getExpr()->spaceRequired();
+            if(getCasePtr()!=nullptr)    {
+                tmp+=getCasePtr()->spaceRequired();
+            }
+            return tmp;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"switch(";
+            getExpr()->print(dst);
+            dst<<")"<<std::endl;
+            getCasePtr()->print(dst);
+
+            
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string initialEndPoint = context->BranchEndPoint;  // save previous BranchEndPoint (to support nested Ifs)
+            context->BranchEndPoint = makeLabel("SWITCH_end");
+            int Loopinit = context->isLoop;
+            context->isLoop = 0;
+            context->isSwitch = 1;
+            std::list<std::string> initCase_Label = context->Case_label;
+            std::list<std::string> case_label;
+            context->Case_label = case_label;
+            // std::string nextBranch = makeLabel("next");
+            getExpr()->generate(file,"$t7",context); // save expression that we need to compare
+            if(getCasePtr() != nullptr) {
+                getCasePtr()->comparison(file,"t7",context);
+                getCasePtr()->generate(file,destReg,context);
+            }
+
+            file<<context->BranchEndPoint<<":"<<std::endl;
+            context->BranchEndPoint = initialEndPoint;          // restore previous BranchEndPoint
+            context->Case_label = initCase_Label;
+            context->isSwitch = 0;
+            context->isLoop = Loopinit;
+        }
+};
+
+class CaseBlock : public Branch {
+    private:
+        ProgramPtr constant;
+        ProgramPtr nextCase=nullptr;
+        ProgramPtr defaultAction=nullptr;
+    public:
+        CaseBlock(ProgramPtr _constant, ProgramPtr _action, ProgramPtr _nextCase, ProgramPtr _defaultAction) : Branch(_action), constant(_constant), nextCase(_nextCase), defaultAction(_defaultAction) {}
+
+        ~CaseBlock()  {
+            delete constant;
+            delete nextCase;
+            delete defaultAction;
+        }
+
+        ProgramPtr getConstant() const {
+            return constant;
+        }
+
+        ProgramPtr getNextCase() const  {
+            return nextCase;
+        }
+
+        ProgramPtr getDefaultAction() const  {
+            return defaultAction;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp = getAction()->spaceRequired();
+            tmp+=getConstant()->spaceRequired();
+            if(getNextCase()!=nullptr)  {
+                tmp+=getNextCase()->spaceRequired();
+            }
+            if(getDefaultAction()!=nullptr)  {
+                tmp+=getDefaultAction()->spaceRequired();
+            }
+            
+            return tmp;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"case ";
+            getConstant()->print(dst);
+            dst<<":"<<std::endl;
+            if(getAction()!=nullptr)    {
+                getAction()->print(dst);
+            }
+            if(getNextCase()!=nullptr)  {
+                getNextCase()->print(dst);
+            }
+            if(getDefaultAction() != nullptr){
+                dst<<"default:"<<std::endl;
+                getDefaultAction()->print(dst);
+            }
+        }
+
+        virtual void comparison(std::ofstream &file, const char* srcReg, Context *context) const override    {
+            std::string nextLabel = makeLabel("nextcase");
+            context->Case_label.push_back(nextLabel);
+            long ofs = context->stack.slider;
+            file<<"sw "<<std::string(srcReg)<<", "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            getConstant()->generate(file, "$t0",context);
+            file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            context->stack.slider-=4;
+            file <<"beq $t1, $t0, "<<nextLabel<<std::endl;
+            file<<"nop"<<std::endl;
+            if (getNextCase() != nullptr){
+                getNextCase()->comparison(file,"$t1",context);
+            }
+            if(getDefaultAction() != nullptr){
+                std::string defaultLabel = makeLabel("default");
+                file<<"b "<<defaultLabel<<std::endl;
+                file<<"nop"<<std::endl;
+                context->Case_label.push_back(defaultLabel);
+            }
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::list<std::string>::iterator it = context->Case_label.begin();
+            std::string case_label = *it;
+            file<<case_label<<":"<<std::endl;
+            if(getAction()!=nullptr)    {
+                getAction()->generate(file,destReg,context);
+                file<<"b "<<context->BranchEndPoint<<std::endl;
+                file<<"nop"<<std::endl;
+            }
+            if (context->Case_label.size() != 0){
+                context->Case_label.pop_front();
+            }
+            if(getNextCase() != nullptr){
+                getNextCase()->generate(file,destReg,context);
+            }
+            if(getDefaultAction() != nullptr){
+                std::list<std::string>::iterator it_def = context->Case_label.begin();
+                std::string default_label = *it_def;
+                file<<default_label<<":"<<std::endl;
+                getDefaultAction()->generate(file,destReg,context);
+            }
+        }
+};
+
 #endif

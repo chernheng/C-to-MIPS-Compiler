@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <list>
+#include <iterator>
 
 std::string makeLabel(const char* _name);
 
@@ -40,8 +42,10 @@ struct Context {
     std::string BranchEndPoint="";
     std::string FuncRetnPoint="";
     varInfo tempVarInfo;
+    std::list<std::string> Case_label;
     int isFunc=0;
     int isLoop=0;
+    int isSwitch=0;
     long LoopInitSP=0;
     int ArgCount=0;
 };

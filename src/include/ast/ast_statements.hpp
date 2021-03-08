@@ -55,6 +55,10 @@ class BreakStatement : public Program {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            if(context->BranchEndPoint!="" && context->isSwitch == 1) {
+                file<<"b "<<context->BranchEndPoint<<std::endl;
+                file<<"nop"<<std::endl;
+            }
             if(context->LoopEndPoint!="")  {
                 file<<"addiu $sp, $sp, "<<(context->stack.size - context->LoopInitSP)<<std::endl;
                 file<<"b "<<context->LoopEndPoint<<std::endl;

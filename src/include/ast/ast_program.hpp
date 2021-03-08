@@ -24,6 +24,9 @@ class Program {
         }
 
         virtual void print(std::ostream &dst) const =0;
+
+        virtual void comparison(std::ofstream &file, const char* srcReg, Context *context) const   { // for switch case
+        }
         
         // Implement generate function to generate code
         virtual void generate(std::ofstream &file, const char*destReg, Context *context) const   {     // consider changing bindings to a struct containing the var and fn LUTs
