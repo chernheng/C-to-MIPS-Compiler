@@ -159,6 +159,7 @@ class FunctionCall : public Program {   // function call
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             long initSL = context->stack.slider;    // store previous context
+            long initSP = context->stack.size;
             long RAoffset = context->stack.slider;
             file<<"sw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;    // store $ra
             file<<"addiu $sp, $sp, -4"<<std::endl;
@@ -180,6 +181,7 @@ class FunctionCall : public Program {   // function call
             file<<"addiu $sp, $sp, 4"<<std::endl;
             file<<"lw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;     // retore value of $ra
             context->stack.slider = initSL;         // load previous context
+            context->stack.size = initSP;
         }
 };
 

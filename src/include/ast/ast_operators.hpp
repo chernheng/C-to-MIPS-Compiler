@@ -51,8 +51,8 @@ class AssignmentOperator : public Operator {
     public:
         AssignmentOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
 
-        virtual long spaceRequired() const override  {   // assignmenr operator does not need any temporary stack space
-            return 0;
+        virtual long spaceRequired() const override  {   // pass through space requirement of right operator
+            return getRight()->spaceRequired();
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
