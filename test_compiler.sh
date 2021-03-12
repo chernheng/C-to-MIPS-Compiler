@@ -37,6 +37,17 @@ if [ $1 -eq 1 ] ; then
     exit 0;
 fi
 
+if [ $1 -eq 3 ] ; then
+    echo "========================================"
+    echo "Compiling with driver program"
+    mips-linux-gnu-gcc -mfp32 -o dev/test_program.o -c dev/output.s
+    mips-linux-gnu-gcc -mfp32 -static -o dev/test_program dev/test_program.o dev/test_driver.c
+    qemu-mips dev/test_program
+    echo "Exit code: $?"
+    exit 0;
+fi
+
+
 echo "========================================"
 echo " Cleaning the temporaries and outputs"
 make clean
@@ -61,6 +72,8 @@ if [ $1 -eq 2 ] ; then
     done
     exit 0;
 fi
+
+
 
 echo "========================================"
 
