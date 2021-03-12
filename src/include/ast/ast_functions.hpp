@@ -138,14 +138,14 @@ class FunctionCall : public Program {   // function call
             if(args!=nullptr)   {
                 long count = args->getCount();
                 long space = (4*count)+8;
-                if(space<24)    {               // set minimum space required to 20 bytes to accomodate $a0 - $a3 and some padding
-                    space=24;
+                if(space<32)    {               // set minimum space required to 20 bytes to accomodate $a0 - $a3 and some padding
+                    space=32;
                 }
                 space+=args->spaceRequired();
                 return space;
             }
             else    {
-                return 24;
+                return 32;
             }
         }
         
@@ -159,8 +159,15 @@ class FunctionCall : public Program {   // function call
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             long initSL = context->stack.slider;    // store previous context
-            long RAoffset = context->stack.slider;
-            file<<"sw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;    // store $ra
+            long initSP = context->stack.size;
+            // long RAoffset = context->stack.slider;
+            long RAoffset = 24;
+            if(args->getCount()>4)  {
+                RAoffset = (4*args->getCount())+4;
+                std::cout<<RAoffset<<std::endl;
+            }
+            // file<<"sw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;    // store $ra
+            file<<"sw $ra, "<<RAoffset<<"($sp)"<<std::endl;
             file<<"addiu $sp, $sp, -4"<<std::endl;
             context->stack.slider+=4;
 
@@ -178,8 +185,10 @@ class FunctionCall : public Program {   // function call
 
             context->stack.slider-=4;
             file<<"addiu $sp, $sp, 4"<<std::endl;
-            file<<"lw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;     // retore value of $ra
+            // file<<"lw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;     // retore value of $ra
+            file<<"lw $ra, "<<RAoffset<<"($sp)"<<std::endl;
             context->stack.slider = initSL;         // load previous context
+            context->stack.size = initSP;
         }
 };
 
@@ -232,13 +241,15 @@ class FunctionDef : public Program {    // function definition
             std::unordered_map<std::string,varInfo> tempScope;
             context->stack.lut.push_back(tempScope);            // create scope on variable table for function arguments
 
-            file << "   .text"<<std::endl;
+            // file << "   .text"<<std::endl;
+            file << "   .align 2"<<std::endl;
             file << "   .globl	"<<getID()<<std::endl;
             file << "   .ent	"<<getID()<<std::endl;
             file << "   .type	"<<getID()<<", @function"<<std::endl;
 
             context->FuncRetnPoint = makeLabel("func_end");
             file<<getID()<<":"<<std::endl;                      // function start
+            file<<".set noreorder"<<std::endl;
          
             context->stack.size+=8;                            // allocate 8 bytes for $fp + padding, set context FP to old SP value
             context->stack.slider = context->stack.size;
@@ -270,7 +281,9 @@ class FunctionDef : public Program {    // function definition
             file<<"jr $ra"<<std::endl;                          // end of function, return to caller 
             file<<"nop"<<std::endl;
 
+            file<<".set reorder"<<std::endl;
             file << "    .end     "<<getID()<<std::endl;
+            file<<".size    "<<getID()<<", .-"<<getID()<<std::endl<<std::endl;
             context->stack.lut.pop_back();                      // clear function argument scope
             context->isFunc=0;                                  // reload iniital context
             context->FuncRetnPoint = initFuncEnd;
