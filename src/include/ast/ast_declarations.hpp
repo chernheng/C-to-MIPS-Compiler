@@ -79,10 +79,12 @@ class DeclareVariable : public Program {
                 file<<"   .section        .bss,\"aw\",@nobits"<<std::endl;
                 file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
                 file<<getID()<<":"<<std::endl;
+                vf.isGlobal = 1;
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
             if((init==nullptr)& (size==1)){
                 file<<"   .space   "<<vf.numBytes<<std::endl;
+                return;         // end if global variable
             }
             if(init!=nullptr)   {
                 init->generate(file, "$t7", context);
@@ -96,6 +98,127 @@ class DeclareVariable : public Program {
             context->stack.slider+=4;
             file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
             return;                        
+        }
+};
+
+class DeclareArrayElement : public Program {
+    private:
+        long n;
+        DeclareArrayElement *next=nullptr;
+    public:
+        DeclareArrayElement(std::string *_num, DeclareArrayElement *_next) : next(_next)  {
+            n=std::stol(*_num);
+            delete _num;
+        }
+
+        ~DeclareArrayElement() {
+            delete next;
+        }
+
+        virtual long spaceRequired() const override {   // returns number of elements in current and subsequent nodes
+            if(next!=nullptr)   {
+                return n * next->spaceRequired();
+            }
+            else    {
+                return n;
+            }
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"["<<n<<"]";
+            if(next!=nullptr)   {
+                next->print(dst);
+            }
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            context->vfPointer->dimension.push_back(n);
+            context->vfPointer->blockSize.push_back(0);
+            if(next!=nullptr)   {
+                next->generate(file, destReg, context);
+            }
+        }
+};
+
+class DeclareArray : public Program {
+    private:
+        std::string type;
+        std::string id;
+        DeclareArrayElement *dimensions;
+        ProgramPtr init=nullptr; //int x = 5;
+        int ptr=0;
+    public:
+        DeclareArray(std::string *_type, std::string *_id, DeclareArrayElement *_dimens, ProgramPtr _init) : type(*_type), id(*_id), dimensions(_dimens), init(_init) {
+            delete _type;
+            delete _id;
+        }
+
+        ~DeclareArray() {
+            delete dimensions;
+            delete init;
+        }
+
+        std::string getID() const   {
+            return id;
+        }
+
+        std::string getType() const {
+            return type;
+        }
+
+        virtual long spaceRequired() const override {
+            if(type=="int") {
+                return 4*dimensions->spaceRequired();
+            }
+            else if(type=="char")   {
+                long tmp=dimensions->spaceRequired();
+                if(tmp % 4)   {
+                    tmp++;
+                }
+                return tmp;
+            }
+            else if(type=="float")  {
+                return 4*dimensions->spaceRequired();
+            }
+            else    {       // for structs/typedefs
+                return 0;   // change later
+            }
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<type<<" "<<id;
+            dimensions->print(dst);
+            dst<<";"<<std::endl;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override   {
+            varInfo vf;
+            context->vfPointer=&vf;
+            if(type=="int") {
+                vf.numBytes=4;
+                vf.type="int";
+            }
+            else if(type=="char")   {
+                vf.numBytes=1;
+                vf.type="char";
+            }
+            vf.length = dimensions->spaceRequired();    // number of elements
+            vf.blockSize.back() = vf.numBytes;
+            for(long i=vf.blockSize.size()-2;i>=0;i--)  {                          // build block table
+                vf.blockSize.at(i) = vf.dimension.at(i+1) * vf.blockSize.at(i+1);
+            }
+            if(context->stack.lut.size()==1)    {   // global array
+                vf.isGlobal = 1;
+            }
+            else    {                               // local array
+                vf.offset=context->stack.slider;
+                long space=vf.numBytes*vf.length;
+                if(space % 4)   {
+                    space++;
+                }
+                context->stack.slider+=space;
+            }
+            context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
         }
 };
 

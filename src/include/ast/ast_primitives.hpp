@@ -53,19 +53,32 @@ class Variable : public Program {
                 wtf=i;
                 it=context->stack.lut.at(i).find(getID());
                 if(it!=context->stack.lut.at(i).end()) {
+                    context->tempVarInfo = it->second;
+                    if(i>0)    {
+                        long offset = context->stack.size - it->second.offset;
+                        if(it->second.type=="int")  {                
+                            file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                        }
+                    }
+                    else    {   // insert code for global variable reference
+
+                    }
                     break;
                 }
             }
-            if(it!=context->stack.lut.at(wtf).end()) {
-                context->tempVarInfo = it->second;
-                long offset = context->stack.size - it->second.offset;
-                if(it->second.type=="int")  {                
-                    file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
-                }
-                else if(it->second.type=="char")    {
-                    file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
-                }
-            }            
+            // if(it!=context->stack.lut.at(wtf).end()) {
+            //     context->tempVarInfo = it->second;
+            //     long offset = context->stack.size - it->second.offset;
+            //     if(it->second.type=="int")  {                
+            //         file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+            //     }
+            //     else if(it->second.type=="char")    {
+            //         file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+            //     }
+            // }            
         }
 };
 

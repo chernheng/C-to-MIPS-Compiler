@@ -16,8 +16,11 @@ struct varInfo {
     long length=0;  // number of elements
     int isFP=0;
     int isPtr=0;
+    int isGlobal=0;
     long initValue=0;
     std::string type="";
+    std::vector<long> dimension;
+    std::vector<long> blockSize;
 };
 
 struct functionInfo {
@@ -42,6 +45,7 @@ struct Context {
     std::string BranchEndPoint="";
     std::string FuncRetnPoint="";
     varInfo tempVarInfo;
+    varInfo *vfPointer=nullptr;
     std::list<std::string> Case_label;
     int isFunc=0;
     int isLoop=0;
