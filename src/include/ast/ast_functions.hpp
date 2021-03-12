@@ -94,6 +94,7 @@ class FunctionCallArgs : public FunctionArgs {
         virtual void print(std::ostream &dst) const override    {
             action->print(dst);
             if(next!=nullptr)   {
+                dst<<",";
                 next->print(dst);
             }
         }
