@@ -18,6 +18,7 @@
   const Program *programPtr;
   FunctionDefArgs *fnDefArgs;
   FunctionArgs *fnCallArgs;
+  CaseBlock *caseptr;
   double number;
   std::string *string;
 }
@@ -25,17 +26,18 @@
 %token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE KW_ELIF KW_SWITCH KW_CASE KW_DEFAULT
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
-%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC
+%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC OP_QUESTION
 %token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON
 
 %type <string> NAME VAR_TYPE NUMBER
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
-%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH CASE
+%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION 
-%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT 
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT TERNARY
 %type <fnDefArgs> DEF_ARGS
 %type <fnCallArgs> CALL_ARGS
+%type <caseptr> CASE
 
 
 %start ROOT
@@ -70,6 +72,8 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
                 | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
+                | VAR_TYPE NAME OP_EQUAL FUNCTION SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); } 
+                | VAR_TYPE NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }    
                 | VAR_TYPE OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
                 | VAR_TYPE OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1); } //int *x = &f;
 
@@ -103,7 +107,6 @@ COMMAND : VAR_DECLARATION           { $$ = $1; }
 
 SCOPE : B_LCURLY B_RCURLY               { $$ = new Scope(nullptr); }    // empty scope (Scope is defined in ast_program.hpp)
       | B_LCURLY COMMAND_SEQ B_RCURLY   { $$ = new Scope($2); }
-      | B_LCURLY CASE B_RCURLY   { $$ = new Scope($2); }
 
 
 LOOP : WHILE_LOOP STATEMENT     { $$ = new WhileLoop($1,$2); }
@@ -117,10 +120,12 @@ FOR_LOOP : KW_FOR B_LBRACKET VAR_DECLARATION CONDITION SEMI_COLON STATE B_RBRACK
 
 WHILE_LOOP : KW_WHILE B_LBRACKET CONDITION B_RBRACKET   { $$ = $3; }
 
-SWITCH : KW_SWITCH B_LBRACKET MATH B_RBRACKET SCOPE      {$$ = new SwitchBlock($3,$5);}
+SWITCH : KW_SWITCH B_LBRACKET MATH B_RBRACKET B_LCURLY CASE B_RCURLY       {$$ = new SwitchBlock($3,$6);}
+       | KW_SWITCH B_LBRACKET MATH B_RBRACKET B_LCURLY B_RCURLY       {$$ = new SwitchBlock($3,nullptr);}
 
 CASE : KW_CASE FACTOR COLON COMMAND_SEQ CASE          { $$ = new CaseBlock{$2,$4,$5,nullptr};}
      | KW_CASE FACTOR COLON COMMAND_SEQ KW_DEFAULT COLON COMMAND_SEQ   { $$ = new CaseBlock{$2,$4,nullptr,$7};} //end of the case
+     | KW_CASE FACTOR COLON COMMAND_SEQ   { $$ = new CaseBlock{$2,$4,nullptr,nullptr};}
 
 BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                             { $$ = new IfBlock($3,$5,nullptr,nullptr); }
        | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE                                 { $$ = new IfBlock($3,$5,nullptr,nullptr); }
@@ -153,7 +158,10 @@ STATE     : ASSIGNMENT   { $$ = $1; }
 
 ASSIGNMENT : VARIABLE OP_EQUAL FUNCTION     { $$ = new AssignmentOperator($1,$3); }
            | VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
+           | VARIABLE OP_EQUAL TERNARY         { $$ = new AssignmentOperator($1,$3); } 
 
+TERNARY : CONDITION OP_QUESTION MATH COLON MATH {$$ = new TernaryBlock($1,$3,$5);}
+        | B_LBRACKET CONDITION OP_QUESTION MATH COLON MATH B_RBRACKET {$$ = new TernaryBlock($2,$4,$6);}
 
 MATH : CONDITION  {$$ = $1;}
      | MATH OP_XOR MATH  {$$ = new BitXOROperator($1, $3); } // ^ 

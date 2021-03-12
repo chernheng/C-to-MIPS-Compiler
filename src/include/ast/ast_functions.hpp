@@ -241,7 +241,7 @@ class FunctionDef : public Program {    // function definition
             std::unordered_map<std::string,varInfo> tempScope;
             context->stack.lut.push_back(tempScope);            // create scope on variable table for function arguments
 
-            // file << "   .text"<<std::endl;
+            file << "   .text"<<std::endl;
             file << "   .align 2"<<std::endl;
             file << "   .globl	"<<getID()<<std::endl;
             file << "   .ent	"<<getID()<<std::endl;

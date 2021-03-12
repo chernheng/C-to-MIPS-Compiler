@@ -55,6 +55,7 @@ default         { return KW_DEFAULT;}
 ">>"            { return OP_RSHIFT; }
 "++"            { return OP_INC;}
 "--"            { return OP_DEC;}
+"\?"            { return OP_QUESTION;}
 
 ","             { return COMMA;}
 "\:"             { return COLON;}

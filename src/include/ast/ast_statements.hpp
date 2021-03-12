@@ -59,7 +59,7 @@ class BreakStatement : public Program {
                 file<<"b "<<context->BranchEndPoint<<std::endl;
                 file<<"nop"<<std::endl;
             }
-            if(context->LoopEndPoint!="")  {
+            if(context->LoopEndPoint!="" && context->isLoop ==1)  {
                 file<<"addiu $sp, $sp, "<<(context->stack.size - context->LoopInitSP)<<std::endl;
                 file<<"b "<<context->LoopEndPoint<<std::endl;
                 file<<"nop"<<std::endl;

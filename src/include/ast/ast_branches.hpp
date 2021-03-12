@@ -186,74 +186,13 @@ class ElseIfBlock : public Branch {
         }
 };
 
-class SwitchBlock : public Branch {
-    private:
-        ProgramPtr expr;
-        ProgramPtr casePtr=nullptr;
-    public:
-        SwitchBlock(ProgramPtr _expr, ProgramPtr _casePtr) : Branch(nullptr), expr(_expr),casePtr(_casePtr) {}
-
-        ~SwitchBlock()  {
-            delete expr;
-            delete casePtr;
-        }
-
-        ProgramPtr getExpr() const {
-            return expr;
-        }
-
-        ProgramPtr getCasePtr() const    {
-            return casePtr;
-        }
-
-        virtual long spaceRequired() const override {
-            long tmp = getExpr()->spaceRequired();
-            if(getCasePtr()!=nullptr)    {
-                tmp+=getCasePtr()->spaceRequired();
-            }
-            return tmp;
-        }
-
-        virtual void print(std::ostream &dst) const override    {
-            dst<<"switch(";
-            getExpr()->print(dst);
-            dst<<")"<<std::endl;
-            getCasePtr()->print(dst);
-
-            
-        }
-
-        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            std::string initialEndPoint = context->BranchEndPoint;  // save previous BranchEndPoint (to support nested Ifs)
-            context->BranchEndPoint = makeLabel("SWITCH_end");
-            int Loopinit = context->isLoop;
-            context->isLoop = 0;
-            context->isSwitch = 1;
-            std::list<std::string> initCase_Label = context->Case_label;
-            std::list<std::string> case_label;
-            context->Case_label = case_label;
-            // std::string nextBranch = makeLabel("next");
-            getExpr()->generate(file,"$t7",context); // save expression that we need to compare
-            if(getCasePtr() != nullptr) {
-                getCasePtr()->comparison(file,"t7",context);
-                getCasePtr()->generate(file,destReg,context);
-            }
-
-            file<<context->BranchEndPoint<<":"<<std::endl;
-            context->BranchEndPoint = initialEndPoint;          // restore previous BranchEndPoint
-            context->Case_label = initCase_Label;
-            context->isSwitch = 0;
-            context->isLoop = Loopinit;
-        }
-};
-
 class CaseBlock : public Branch {
     private:
         ProgramPtr constant;
-        ProgramPtr nextCase=nullptr;
+        CaseBlock* nextCase=nullptr;
         ProgramPtr defaultAction=nullptr;
     public:
-        CaseBlock(ProgramPtr _constant, ProgramPtr _action, ProgramPtr _nextCase, ProgramPtr _defaultAction) : Branch(_action), constant(_constant), nextCase(_nextCase), defaultAction(_defaultAction) {}
+        CaseBlock(ProgramPtr _constant, ProgramPtr _action, CaseBlock* _nextCase, ProgramPtr _defaultAction) : Branch(_action), constant(_constant), nextCase(_nextCase), defaultAction(_defaultAction) {}
 
         ~CaseBlock()  {
             delete constant;
@@ -322,6 +261,10 @@ class CaseBlock : public Branch {
                 file<<"nop"<<std::endl;
                 context->Case_label.push_back(defaultLabel);
             }
+            if(getDefaultAction() == nullptr && getNextCase()==nullptr){
+                file<<"b "<<context->BranchEndPoint<<std::endl;
+                file<<"nop"<<std::endl;
+            }
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
@@ -330,8 +273,6 @@ class CaseBlock : public Branch {
             file<<case_label<<":"<<std::endl;
             if(getAction()!=nullptr)    {
                 getAction()->generate(file,destReg,context);
-                file<<"b "<<context->BranchEndPoint<<std::endl;
-                file<<"nop"<<std::endl;
             }
             if (context->Case_label.size() != 0){
                 context->Case_label.pop_front();
@@ -347,5 +288,137 @@ class CaseBlock : public Branch {
             }
         }
 };
+
+class SwitchBlock : public Branch {
+    private:
+        ProgramPtr expr;
+        CaseBlock* casePtr=nullptr;
+    public:
+        SwitchBlock(ProgramPtr _expr, CaseBlock* _casePtr) : Branch(nullptr), expr(_expr),casePtr(_casePtr) {}
+
+        ~SwitchBlock()  {
+            delete expr;
+            delete casePtr;
+        }
+
+        ProgramPtr getExpr() const {
+            return expr;
+        }
+
+        ProgramPtr getCasePtr() const    {
+            return casePtr;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp = getExpr()->spaceRequired();
+            if(getCasePtr()!=nullptr)    {
+                tmp+=getCasePtr()->spaceRequired();
+            }
+            return tmp;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"switch(";
+            getExpr()->print(dst);
+            dst<<")"<<std::endl;
+            if (getCasePtr() != nullptr){
+                getCasePtr()->print(dst);
+            }
+
+            
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string initialEndPoint = context->BranchEndPoint;  // save previous BranchEndPoint (to support nested Ifs)
+            context->BranchEndPoint = makeLabel("SWITCH_end");
+            int Switchinit = context->isSwitch;
+            int Loopinit = context->isLoop;
+            context->isLoop = 0;
+            context->isSwitch = 1;
+            std::unordered_map<std::string,varInfo> tmp;
+            long initStackSize = context->stack.size;
+            long initSliderVal=context->stack.slider;
+            context->stack.slider=context->stack.size;
+            long delta=spaceRequired();
+            context->stack.size+=delta;
+            if(delta>0) {
+                file<<"addiu $sp, $sp, -"<<delta<<std::endl;
+            }
+            context->stack.lut.push_back(tmp);
+            std::list<std::string> initCase_Label = context->Case_label;
+            std::list<std::string> case_label;
+            context->Case_label = case_label;
+            // std::string nextBranch = makeLabel("next");
+            getExpr()->generate(file,"$t7",context); // save expression that we need to compare
+            if(getCasePtr() != nullptr) {
+                getCasePtr()->comparison(file,"$t7",context);
+                getCasePtr()->generate(file,destReg,context);
+            }
+
+            file<<context->BranchEndPoint<<":"<<std::endl;
+            context->BranchEndPoint = initialEndPoint;          // restore previous BranchEndPoint
+            context->Case_label = initCase_Label;
+            context->isSwitch = Switchinit;
+            context->isLoop = Loopinit;
+            if(delta>0)    {
+                file<<"addiu $sp, $sp, "<<delta<<std::endl;    // shift down the stack pointer (always move sp by 4 to maintain word alignment)
+            }
+            context->stack.size=initStackSize;
+            context->stack.slider=initSliderVal;
+            context->stack.lut.pop_back();
+        }
+};
+
+class TernaryBlock : public Branch {
+    private:
+        ProgramPtr cond;
+        ProgramPtr falseExpr;
+    public:
+        TernaryBlock(ProgramPtr _condition, ProgramPtr _action, ProgramPtr _falseExpr) : Branch(_action), cond(_condition), falseExpr(_falseExpr)  {}
+
+        ~TernaryBlock()  {
+            delete cond;
+            delete falseExpr;
+        }
+
+        ProgramPtr getCondition() const {
+            return cond;
+        }
+
+        ProgramPtr getFalse() const    {
+            return falseExpr;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp = getAction()->spaceRequired();
+            tmp+=getCondition()->spaceRequired();
+            tmp+=getFalse()->spaceRequired();
+            return tmp;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            getCondition()->print(dst);
+            dst<<" ? ";
+            getAction()->print(dst);
+            dst<<" : ";
+            getFalse()->print(dst);
+            
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string falseLabel = makeLabel("False_Expr");
+            std::string ternaryLabel = makeLabel("Ternary_End");
+            getCondition()->generate(file,"$t7",context);
+            file<<"beq $t7, $zero, "<<falseLabel<<std::endl;
+            file<<"nop"<<std::endl;
+            getAction()->generate(file,destReg,context);
+            file<<"b "<<ternaryLabel<<std::endl;
+            file<<"nop"<<std::endl;
+            file<<falseLabel<<":"<<std::endl;
+            getFalse()->generate(file,destReg,context);
+            file<<ternaryLabel<<":"<<std::endl;
+        }
+};
+
 
 #endif

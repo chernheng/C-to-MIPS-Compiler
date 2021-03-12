@@ -48,6 +48,8 @@ class WhileLoop : public Loop {
             long initialLoopSP = context->LoopInitSP;
             context->LoopInitSP = context->stack.size;
             context->isLoop=1;
+            int Switchinit = context->isSwitch;
+            context->isSwitch = 0;
             context->LoopStartPoint = makeLabel("Loop_Start");
             context->LoopEndPoint = makeLabel("Loop_End");
             file<<context->LoopStartPoint<<":"<<std::endl;  // loop start
@@ -62,6 +64,7 @@ class WhileLoop : public Loop {
             context->LoopEndPoint = initLoopEnd;
             context->LoopInitSP = initialLoopSP;
             context->isLoop = initialIsLoop;
+            context->isSwitch = Switchinit;
         }
 };
 
@@ -100,10 +103,13 @@ class ForLoop : public Loop  {      // for(dec; cond; asn) {...}
             long initialStackSize = context->stack.size;
             long initialSliderValue = context->stack.slider;
             context->isLoop=1;
+            int Switchinit = context->isSwitch;
+            context->isSwitch = 0;
             long scopeSize = dec->spaceRequired();          // allocate new scope on stack for loop conditional variable
             context->stack.lut.push_back(tmp);
             context->stack.slider = context->stack.size;
             context->stack.size += scopeSize;
+            context->LoopInitSP = context->stack.size;
             if(scopeSize>0) {
                 file<<"addiu $sp, $sp, -"<<scopeSize<<std::endl;
             }
@@ -130,6 +136,7 @@ class ForLoop : public Loop  {      // for(dec; cond; asn) {...}
             context->stack.slider = initialSliderValue;
             context->LoopInitSP = initialLoopSP;
             context->isLoop = initialIsLoop;
+            context->isSwitch = Switchinit;
         }
 };
 
