@@ -167,18 +167,20 @@ class DeclareArray : public Program {
         }
 
         virtual long spaceRequired() const override {
+            long tmp=4;     // for array base pointer
             if(type=="int") {
-                return 4*dimensions->spaceRequired();
+                tmp += 4*dimensions->spaceRequired();
             }
             else if(type=="char")   {
-                return dimensions->spaceRequired();
+                tmp += dimensions->spaceRequired();
             }
             else if(type=="float")  {
-                return 4*dimensions->spaceRequired();
+                tmp +=4*dimensions->spaceRequired();
             }
             else    {       // for structs/typedefs
-                return 0;   // change later
+                tmp += 0;   // change later
             }
+            return tmp;
         }
 
         virtual void print(std::ostream &dst) const override    {
@@ -198,7 +200,7 @@ class DeclareArray : public Program {
                 vf.numBytes=1;
                 vf.type="char";
             }
-            vf.length = dimensions->spaceRequired();    // number of elements
+            vf.length = dimensions->spaceRequired()-4;    // number of elements (removing 4 bytes used for base pointer)
             vf.blockSize.back() = vf.numBytes;
             for(long i=vf.blockSize.size()-2;i>=0;i--)  {                          // build block table
                 vf.blockSize.at(i) = vf.dimension.at(i+1) * vf.blockSize.at(i+1);
