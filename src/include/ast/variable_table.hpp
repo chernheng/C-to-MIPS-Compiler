@@ -52,6 +52,7 @@ struct Context {
     int isSwitch=0;
     long LoopInitSP=0;
     int ArgCount=0;
+    long indexCounter=0;
 };
 
 

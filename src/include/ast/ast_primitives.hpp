@@ -101,14 +101,38 @@ class ArrayIndex : public Program {
             }
             return tmp;
         }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"[";
+            value->print(dst);
+            dst<<"]";
+            if(next!=nullptr)   {
+                next->print(dst);
+            }
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            if(next!=nullptr)   {
+                context->indexCounter++;
+                next->generate(file, "$t9", context);
+                context->indexCounter--;
+            }
+            value->generate(file, "$t5", context);
+            file<<"li $t4, "<<context->vfPointer->blockSize.at(context->indexCounter)<<std::endl;
+            file<<"mult $t4, $t5"<<std::endl;
+            file<<"mflo "<<std::string(destReg)<<std::endl;
+            if(next!=nullptr)   {
+                file<<"addu "<<destReg<<", "<<destReg<<", $t9"<<std::endl;
+            }
+        }
 };
 
 class Array : public Program {
     private:
         std::string id;
-        ProgramPtr index;
+        ArrayIndex *index;
     public:
-        Array(std::string *_id, ProgramPtr _index) : id(*_id), index(_index) {
+        Array(std::string *_id, ArrayIndex *_index) : id(*_id), index(_index) {
             delete _id;
         }
 
@@ -125,9 +149,41 @@ class Array : public Program {
         }
 
         virtual void print(std::ostream &dst) const override    {
-            dst<<getID()<<"[";
+            dst<<getID();
             index->print(dst);
-            dst<<"]";
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            int wtf;
+            for(int i=n;i>=0;i--)   {
+                wtf=i;
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
+                    context->tempVarInfo = it->second;
+                    context->vfPointer = &it->second;
+                    context->indexCounter=0;
+                    index->generate(file, "$t8", context);  // load element relative offset into $t8
+                    if(i>0)    {
+                        file<<"li $t5, "<<(context->stack.size - it->second.offset)<<std::endl; // get array base offset from $sp
+                        file<<"subu $t8, $t5, $t8"<<std::endl;  // calculate element offset from $sp
+                        file<<"addu $t9, $sp, $t8"<<std::endl;  // get element address based on offset from $sp
+                        if(it->second.type=="int")  {          
+                            file<<"lw "<<std::string(destReg)<<", 0($t9)"<<std::endl;      
+                            // file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"lb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                            // file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                        }
+                    }
+                    else    {   // insert code for global variable reference
+
+                    }
+                    break;
+                }
+            }
         }
 };
 
