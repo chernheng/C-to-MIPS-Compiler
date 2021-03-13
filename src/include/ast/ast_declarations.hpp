@@ -209,12 +209,13 @@ class DeclareArray : public Program {
                 vf.isGlobal = 1;
             }
             else    {                               // local array
-                vf.offset=context->stack.slider;
+                // vf.offset=context->stack.slider;
                 long space=vf.numBytes*vf.length;
                 if(space % 4)   {
                     space+=4-(space%4);
                 }
                 context->stack.slider+=space;
+                vf.offset=context->stack.slider;
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
         }
