@@ -8,7 +8,6 @@ class DeclareVariable : public Program {
     private:
         std::string type;
         std::string id;
-        std::string number;
         ProgramPtr init=nullptr; //int x = 5;
         int ptr=0;
     public:
@@ -19,12 +18,6 @@ class DeclareVariable : public Program {
 
         DeclareVariable(std::string *_type, std::string *_id, int _ptr) : type(*_type),id(*_id), ptr(_ptr)   {
             delete _type;
-            delete _id;
-        }
-
-        DeclareVariable(std::string *_type, std::string *_id, std::string *_number, int _ptr) : type(*_type), id(*_id), number(*_number), ptr(_ptr)  {
-            delete _type;
-            delete _number;
             delete _id;
         }
 
@@ -40,10 +33,6 @@ class DeclareVariable : public Program {
             return type;
         }
 
-        std::string getNumber() const {
-            return number;
-        }
-        
         int getPtr() const {
             return ptr;
         }
@@ -84,33 +73,31 @@ class DeclareVariable : public Program {
                 vf.numBytes=1;
                 stackInc=1;
             }
-            if ((size == 1) && (getNumber()=="")){
-                file<<"   .globl  "<<getID()<<std::endl;
-                file<<"   .type   "<<getID()<<", @object"<<std::endl;
-                file<<"   .section        .bss,\"aw\",@nobits"<<std::endl;
-                file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
-                file<<getID()<<":"<<std::endl;
+            if (size == 1) {
                 vf.isGlobal = 1;
-            } else if((size == 1) && (getNumber()!="")) {
-                file<<"   .globl  "<<getID()<<std::endl;
-                file<<"   .type   "<<getID()<<", @object"<<std::endl;
-                file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
-                file<<getID()<<":"<<std::endl;
-                vf.isGlobal = 1;
-            } 
+                if (init!= nullptr){
+                    init->generate(file, "$t7", context);
+                    std::string value = context->numVal;
+                    file<<"   .globl  "<<getID()<<std::endl;
+                    file<<"   .type   "<<getID()<<", @object"<<std::endl;
+                    file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
+                    file<<getID()<<":"<<std::endl;
+                    file<<"   .word   "<<value<<std::endl;
+                } else if (init == nullptr){
+                    file<<"   .globl  "<<getID()<<std::endl;
+                    file<<"   .type   "<<getID()<<", @object"<<std::endl;
+                    file<<"   .section        .bss,\"aw\",@nobits"<<std::endl;
+                    file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
+                    file<<getID()<<":"<<std::endl;
+                    file<<"   .space   "<<vf.numBytes<<std::endl;
+                }
+            }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
-            if((getNumber()=="")&& (size==1)){
-                file<<"   .space   "<<vf.numBytes<<std::endl;
-                return;         // end if global variable
-            } else if((getNumber()!="")&& (size==1)) {
-                file<<"   .word   "<<getNumber()<<std::endl;
-            }
-            if (getNumber() != ""){
-                file<<"li $t7, "<<getNumber()<<std::endl; 
-                file<<"sw $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
-            }
+
             if(init!=nullptr)   {
-                init->generate(file, "$t7", context);
+                if (size != 1){
+                    init->generate(file, "$t7", context);
+                }
                 if(stackInc==4) {
                     file<<"sw $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
                 }

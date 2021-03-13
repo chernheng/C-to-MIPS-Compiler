@@ -72,7 +72,6 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
                 | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
-               //  | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    { $$ = new DeclareVariable($1,$2,$4,0);}
                 | VAR_TYPE NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }    
                 | VAR_TYPE OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
                 | VAR_TYPE OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1); } //int *x = &f;

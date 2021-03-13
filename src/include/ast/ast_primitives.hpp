@@ -206,6 +206,7 @@ class Number : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             varInfo tmp;
             context->tempVarInfo = tmp;
+            context->numVal = getValue();
             file<<"li "<<std::string(destReg)<<", "<<getValue()<<std::endl;     // li {destReg}, {value}
         }
 };
