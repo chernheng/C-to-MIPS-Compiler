@@ -165,7 +165,6 @@ class FunctionCall : public Program {   // function call
             long RAoffset = 24;
             if(args->getCount()>4)  {
                 RAoffset = (4*args->getCount())+4;
-                std::cout<<RAoffset<<std::endl;
             }
             // file<<"sw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;    // store $ra
             file<<"sw $ra, "<<RAoffset<<"($sp)"<<std::endl;
