@@ -82,6 +82,27 @@ class Variable : public Program {
         }
 };
 
+class ArrayIndex : public Program {
+    private:
+        ProgramPtr value;
+        ProgramPtr next=nullptr;
+    public:
+        ArrayIndex(ProgramPtr _value, ProgramPtr _next) : value(_value), next(_next)    {}
+
+        ~ArrayIndex()   {
+            delete value;
+            delete next;
+        }
+
+        virtual long spaceRequired() const override {
+            long tmp = value->spaceRequired();
+            if(next!=nullptr)   {
+                tmp+=next->spaceRequired();
+            }
+            return tmp;
+        }
+};
+
 class Array : public Program {
     private:
         std::string id;

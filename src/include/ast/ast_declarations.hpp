@@ -171,11 +171,7 @@ class DeclareArray : public Program {
                 return 4*dimensions->spaceRequired();
             }
             else if(type=="char")   {
-                long tmp=dimensions->spaceRequired();
-                if(tmp % 4)   {
-                    tmp++;
-                }
-                return tmp;
+                return dimensions->spaceRequired();
             }
             else if(type=="float")  {
                 return 4*dimensions->spaceRequired();
@@ -214,7 +210,7 @@ class DeclareArray : public Program {
                 vf.offset=context->stack.slider;
                 long space=vf.numBytes*vf.length;
                 if(space % 4)   {
-                    space++;
+                    space+=4-(space%4);
                 }
                 context->stack.slider+=space;
             }
