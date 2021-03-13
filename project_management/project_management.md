@@ -40,40 +40,40 @@ Tasks:
 
 Basic Features:
 ======================
--   a file containing just a single function with no arguments (DONE) (4th Mar)
--   variables of int type (DONE) (4th Mar)
--   local variables (DONE) (4th Mar)
-arithmetic and logical expressions (DONE) (4th Mar)
-if-then-else statements (DONE) (4th Mar)
-while loops (DONE) (4th Mar)
+-   ~~a file containing just a single function with no arguments (DONE) (4th Mar)~~
+-   ~~variables of int type (DONE) (4th Mar)~~
+-   ~~local variables (DONE) (4th Mar)~~
+-   ~~arithmetic and logical expressions (DONE) (4th Mar)~~
+-   ~~if-then-else statements (DONE) (4th Mar)~~
+-   ~~while loops (DONE) (4th Mar)~~
 
 Intermediate features:
 ======================
     files containing multiple functions that call each other (Test)
-~~functions that take up to four parameters (DONE) (8th Mar)~~
-for loops (DONE) (6th Mar)
+-   ~~functions that take up to four parameters (DONE) (8th Mar)~~
+-   for loops (DONE) (6th Mar)
     arrays declared globally (i.e. outside of any function in your file)
     arrays declared locally (i.e. inside a function)
     reading and writing elements of an array
-recursive function calls
+-   recursive function calls
     the enum keyword
-switch statements (DONE) (12th Mar)
-the break and continue keywords (DONE) (6th Mar)
+-   ~~switch statements (DONE) (12th Mar)~~
+-   ~~the break and continue keywords (DONE) (6th Mar)~~
 
 Advanced features:
 ======================
-variables of double, float, char, unsigned, structs, and pointer types
-calling externally-defined functions (i.e. the file being compiled declares a function, but its definition is provided in a different file that is linked in later on)
-functions that take more than four parameters (DONE) (10th Mar)
-mutually recursive function calls
-locally scoped variable declarations (e.g. a variable that is declared inside the body of a while loop, such as while(...) { int x = ...; ... } (Test) DONE (4th Mar)
+-   variables of double, float, char, unsigned, structs, and pointer types
+-   calling externally-defined functions (i.e. the file being compiled declares a function, but its definition is provided in a different file that is linked in later on)
+-   ~~functions that take more than four parameters (DONE) (10th Mar)
+-   ~~mutually recursive function calls~~
+-   ~~locally scoped variable declarations (e.g. a variable that is declared inside the body of a while loop, such as while(...) { int x = ...; ... } (Test) DONE (4th Mar)~~
     the typedef keyword
     the sizeof(...) function (which takes either a type or a variable)
-taking the address of a variable using the & operator (DONE) (5th Mar)
-dereferencing a pointer-variable using the * operator (DONE) (5th Mar)
-pointer arithmetic (DONE) (5th Mar)
+-   ~~taking the address of a variable using the & operator (DONE) (5th Mar)~~
+-   ~~dereferencing a pointer-variable using the * operator (DONE) (5th Mar)~~
+-   ~~pointer arithmetic (DONE) (5th Mar)~~
     character literals, including escape sequences like \n
-strings (as NULL-terminated character arrays)
+-   strings (as NULL-terminated character arrays)
     declaration and use of structs
 
 Functions more than 4 args, call multiple functions cascade

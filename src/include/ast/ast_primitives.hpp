@@ -54,7 +54,7 @@ class Variable : public Program {
                 it=context->stack.lut.at(i).find(getID());
                 if(it!=context->stack.lut.at(i).end()) {
                     context->tempVarInfo = it->second;
-                    if(i>0)    {
+                    if(i>0)    { //not global
                         long offset = context->stack.size - it->second.offset;
                         if(it->second.type=="int")  {                
                             file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
@@ -64,7 +64,9 @@ class Variable : public Program {
                         }
                     }
                     else    {   // insert code for global variable reference
-
+                        std::string id = it->first;
+                        file<<"lui "<<std::string(destReg)<<", \%hi("<<id<<")"<<std::endl;
+                        file<<"lw "<<std::string(destReg)<<", \%lo("<<id<<")("<<std::string(destReg)<<")"<<std::endl;
                     }
                     break;
                 }

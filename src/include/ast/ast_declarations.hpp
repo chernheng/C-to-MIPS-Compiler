@@ -94,7 +94,7 @@ class DeclareVariable : public Program {
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
 
-            if(init!=nullptr)   {
+            if((init!=nullptr)&&(size!=1))   {
                 if (size != 1){
                     init->generate(file, "$t7", context);
                 }

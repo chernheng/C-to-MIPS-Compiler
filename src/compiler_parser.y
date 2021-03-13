@@ -124,6 +124,8 @@ CASE : KW_CASE FACTOR COLON COMMAND_SEQ CASE          { $$ = new CaseBlock{$2,$4
      | KW_CASE FACTOR COLON COMMAND_SEQ KW_DEFAULT COLON COMMAND_SEQ   { $$ = new CaseBlock{$2,$4,nullptr,$7};} //end of the case
      | KW_CASE FACTOR COLON COMMAND_SEQ   { $$ = new CaseBlock{$2,$4,nullptr,nullptr};}
 
+// ENUM : ENUM VARIABLE
+
 BRANCH : KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT                             { $$ = new IfBlock($3,$5,nullptr,nullptr); }
        | KW_IF B_LBRACKET CONDITION B_RBRACKET SCOPE                                 { $$ = new IfBlock($3,$5,nullptr,nullptr); }
        | KW_IF B_LBRACKET CONDITION B_RBRACKET STATEMENT ELSE_BLOCK                  { $$ = new IfBlock($3,$5,nullptr,$6); }
