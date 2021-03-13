@@ -72,7 +72,7 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
                 | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
-                | VAR_TYPE NAME OP_EQUAL FUNCTION SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); } 
+               //  | VAR_TYPE NAME OP_EQUAL NUMBER SEMI_COLON    { $$ = new DeclareVariable($1,$2,$4,0);}
                 | VAR_TYPE NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }    
                 | VAR_TYPE OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
                 | VAR_TYPE OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1); } //int *x = &f;
@@ -86,9 +86,7 @@ FUNCTION : NAME B_LBRACKET B_RBRACKET             { $$ = new FunctionCall($1,nul
          | NAME B_LBRACKET CALL_ARGS B_RBRACKET   { $$ = new FunctionCall($1,$3); }
 
 CALL_ARGS : MATH                                  { $$ = new FunctionCallArgs($1,nullptr); }
-          | FUNCTION                              { $$ = new FunctionCallArgs($1,nullptr); }
           | MATH COMMA CALL_ARGS                  { $$ = new FunctionCallArgs($1,$3); }
-          | FUNCTION COMMA CALL_ARGS              { $$ = new FunctionCallArgs($1,$3); }
 
 DEF_ARGS : VAR_TYPE NAME                     { $$ = new FunctionDefArgs($1,$2,nullptr); }
          | VAR_TYPE NAME COMMA DEF_ARGS      { $$ = new FunctionDefArgs($1,$2,$4); }
@@ -149,19 +147,17 @@ FLOW : RETN SEMI_COLON                       { $$ = $1; }
 RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
      | KW_RETURN MATH             { $$ = new ReturnStatement($2); }
 
-STATEMENT : FUNCTION SEMI_COLON     { $$ = $1; }
-          | ASSIGNMENT SEMI_COLON   { $$ = $1; }
+STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
           | INCREMENT SEMI_COLON    { $$ = $1; }
 
 STATE     : ASSIGNMENT   { $$ = $1; }
           | INCREMENT    { $$ = $1; }
 
-ASSIGNMENT : VARIABLE OP_EQUAL FUNCTION     { $$ = new AssignmentOperator($1,$3); }
-           | VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
+ASSIGNMENT : VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
            | VARIABLE OP_EQUAL TERNARY         { $$ = new AssignmentOperator($1,$3); } 
 
 TERNARY : CONDITION OP_QUESTION MATH COLON MATH {$$ = new TernaryBlock($1,$3,$5);}
-        | B_LBRACKET CONDITION OP_QUESTION MATH COLON MATH B_RBRACKET {$$ = new TernaryBlock($2,$4,$6);}
+        | B_LBRACKET TERNARY B_RBRACKET {$$ = $2;}
 
 MATH : CONDITION  {$$ = $1;}
      | MATH OP_XOR MATH  {$$ = new BitXOROperator($1, $3); } // ^ 
@@ -204,6 +200,7 @@ INCREMENT : FACTOR   { $$ = $1; }
 
 FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number
+       | FUNCTION { $$ = $1;}
        | B_LBRACKET MATH B_RBRACKET { $$ = $2; }
 
 

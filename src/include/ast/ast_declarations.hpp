@@ -8,6 +8,7 @@ class DeclareVariable : public Program {
     private:
         std::string type;
         std::string id;
+        std::string number;
         ProgramPtr init=nullptr; //int x = 5;
         int ptr=0;
     public:
@@ -21,6 +22,12 @@ class DeclareVariable : public Program {
             delete _id;
         }
 
+        DeclareVariable(std::string *_type, std::string *_id, std::string *_number, int _ptr) : type(*_type), id(*_id), number(*_number), ptr(_ptr)  {
+            delete _type;
+            delete _number;
+            delete _id;
+        }
+
         ~DeclareVariable() {
             delete init;
         }
@@ -31,6 +38,10 @@ class DeclareVariable : public Program {
 
         std::string getType() const {
             return type;
+        }
+
+        std::string getNumber() const {
+            return number;
         }
         
         int getPtr() const {
@@ -73,18 +84,30 @@ class DeclareVariable : public Program {
                 vf.numBytes=1;
                 stackInc=1;
             }
-            if (size == 1){
+            if ((size == 1) && (getNumber()=="")){
                 file<<"   .globl  "<<getID()<<std::endl;
                 file<<"   .type   "<<getID()<<", @object"<<std::endl;
                 file<<"   .section        .bss,\"aw\",@nobits"<<std::endl;
                 file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
                 file<<getID()<<":"<<std::endl;
                 vf.isGlobal = 1;
-            }
+            } else if((size == 1) && (getNumber()!="")) {
+                file<<"   .globl  "<<getID()<<std::endl;
+                file<<"   .type   "<<getID()<<", @object"<<std::endl;
+                file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
+                file<<getID()<<":"<<std::endl;
+                vf.isGlobal = 1;
+            } 
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
-            if((init==nullptr)& (size==1)){
+            if((getNumber()=="")&& (size==1)){
                 file<<"   .space   "<<vf.numBytes<<std::endl;
                 return;         // end if global variable
+            } else if((getNumber()!="")&& (size==1)) {
+                file<<"   .word   "<<getNumber()<<std::endl;
+            }
+            if (getNumber() != ""){
+                file<<"li $t7, "<<getNumber()<<std::endl; 
+                file<<"sw $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
             }
             if(init!=nullptr)   {
                 init->generate(file, "$t7", context);
