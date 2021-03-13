@@ -40,9 +40,9 @@ Tasks:
 
 Basic Features:
 ======================
-a file containing just a single function with no arguments (DONE) (4th Mar)
-variables of int type (DONE) (4th Mar)
-local variables (DONE) (4th Mar)
+-   a file containing just a single function with no arguments (DONE) (4th Mar)
+-   variables of int type (DONE) (4th Mar)
+-   local variables (DONE) (4th Mar)
 arithmetic and logical expressions (DONE) (4th Mar)
 if-then-else statements (DONE) (4th Mar)
 while loops (DONE) (4th Mar)
@@ -57,7 +57,7 @@ for loops (DONE) (6th Mar)
     reading and writing elements of an array
 recursive function calls
     the enum keyword
-    switch statements
+switch statements (DONE) (12th Mar)
 the break and continue keywords (DONE) (6th Mar)
 
 Advanced features:

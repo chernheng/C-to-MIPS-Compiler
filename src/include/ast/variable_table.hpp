@@ -44,6 +44,7 @@ struct Context {
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";
     std::string FuncRetnPoint="";
+    std::string numVal="";
     varInfo tempVarInfo;
     varInfo *vfPointer=nullptr;
     std::list<std::string> Case_label;

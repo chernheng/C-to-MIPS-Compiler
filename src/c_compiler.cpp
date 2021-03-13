@@ -12,10 +12,10 @@ int main(int argc, char** argv)
     Context context;
     myfile<<".abicalls"<<std::endl;
     // myfile<<".text"<<std::endl;
+    ast->print(std::cout);
     ast->generate(myfile,"$v0",&context);
     std::cout<<"done compiling"<<std::endl;
     myfile.close();
-    ast->print(std::cout);
     std::cout<<std::endl;
     
 
