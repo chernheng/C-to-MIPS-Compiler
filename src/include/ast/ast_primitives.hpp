@@ -166,9 +166,8 @@ class Array : public Program {
                     context->indexCounter=0;
                     index->generate(file, "$t8", context);  // load element relative offset into $t8
                     if(i>0)    {
-                        file<<"li $t5, "<<(context->stack.size - it->second.offset)<<std::endl; // get array base offset from $sp
-                        file<<"subu $t8, $t5, $t8"<<std::endl;  // calculate element offset from $sp
-                        file<<"addu $t9, $sp, $t8"<<std::endl;  // get element address based on offset from $sp
+                        file<<"lw $t5, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;    // load array base address into $t5
+                        file<<"addu $t9, $t5, $t8"<<std::endl;      // add element offset to base address to get element address
                         if(it->second.type=="int")  {          
                             file<<"lw "<<std::string(destReg)<<", 0($t9)"<<std::endl;      
                             // file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;

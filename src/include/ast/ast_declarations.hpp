@@ -219,13 +219,14 @@ class DeclareArray : public Program {
                 vf.isGlobal = 1;
             }
             else    {                               // local array
-                // vf.offset=context->stack.slider;
                 long space=vf.numBytes*vf.length;
                 if(space % 4)   {
                     space+=4-(space%4);
                 }
                 context->stack.slider+=space;
-                vf.offset=context->stack.slider;
+                vf.offset=context->stack.slider-4;    // offset of base pointer
+                file<<"addiu $t1, $sp, "<<(context->stack.size - vf.offset-4)<<std::endl;   // store 1st element address into base pointer
+                file<<"sw $t1, "<<(context->stack.size - vf.offset)<<"($sp)"<<std::endl;
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
         }
