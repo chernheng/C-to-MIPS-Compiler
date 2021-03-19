@@ -286,6 +286,8 @@ class DeclareFunction : public Program {
             dst<<type<<" "<<id<<"()"; //int f();
             dst<<";";
         }
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+        }
 };
 
 class DeclareTypeDef : public Program {

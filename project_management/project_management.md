@@ -63,7 +63,7 @@ Intermediate features:
 Advanced features:
 ======================
 -   variables of double, float, char, unsigned, structs, and pointer types
--   calling externally-defined functions (i.e. the file being compiled declares a function, but its definition is provided in a different file that is linked in later on)
+-   ~~calling externally-defined functions (i.e. the file being compiled declares a function, but its definition is provided in a different file that is linked in later on) (DONE) (20th Mar)~~ but need more testing
 -   ~~functions that take more than four parameters (DONE) (10th Mar)~~
 -   ~~mutually recursive function calls~~
 -   ~~locally scoped variable declarations (e.g. a variable that is declared inside the body of a while loop, such as while(...) { int x = ...; ... } (Test) DONE (4th Mar)~~
@@ -76,5 +76,4 @@ Advanced features:
 -   strings (as NULL-terminated character arrays)
 -   declaration and use of structs
 
-Functions more than 4 args, call multiple functions cascade
 

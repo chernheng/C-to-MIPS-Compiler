@@ -163,9 +163,11 @@ class FunctionCall : public Program {   // function call
             long initSP = context->stack.size;
             // long RAoffset = context->stack.slider;
             long RAoffset = 24;
-            if(args->getCount()>4)  {
-                RAoffset = (4*args->getCount())+4;
-            }
+            if(args!=nullptr)   {
+                if(args->getCount()>4)  {
+                    RAoffset = (4*args->getCount())+4;
+                }
+            }            
             // file<<"sw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;    // store $ra
             file<<"sw $ra, "<<RAoffset<<"($sp)"<<std::endl;
 
