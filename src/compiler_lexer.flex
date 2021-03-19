@@ -63,6 +63,7 @@ sizeof          { return KW_SIZEOF; }
 [;]             { return SEMI_COLON;}
 
 [0-9]+([.][0-9]*)?      { yylval.string= new std::string(yytext); return NUMBER; }
+[0-9]+([,][0-9]+)*      { yylval.string= new std::string(yytext); return ARRAY_ELEMENTS;}
 [a-zA-Z_]+[a-zA-Z0-9_]* { yylval.string= new std::string(yytext); return NAME; } /*A variable name can only have letters (both uppercase and lowercase letters),
                                                                                          digits and underscore, and  first letter should be either a letter or an underscore */
  

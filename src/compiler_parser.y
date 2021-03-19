@@ -29,9 +29,9 @@
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC OP_QUESTION
-%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON
+%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON ARRAY_ELEMENTS
 
-%type <string> NAME VAR_TYPE NUMBER
+%type <string> NAME VAR_TYPE NUMBER ARRAY_ELEMENTS
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH
@@ -76,6 +76,7 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
                 | VAR_TYPE NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($1,$2,$3,nullptr); }    // array
+                | VAR_TYPE NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARRAY_ELEMENTS B_RCURLY SEMI_COLON {$$ = new DeclareArray($1,$2,$3,$6);}
                 | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
                 | VAR_TYPE NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }    
                 | VAR_TYPE OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
@@ -83,6 +84,7 @@ VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new Declare
 
 ARR_DEC_INDEX : B_LSQUARE NUMBER B_RSQUARE                       { $$ = new DeclareArrayElement($2,nullptr); }
               | B_LSQUARE NUMBER B_RSQUARE ARR_DEC_INDEX         { $$ = new DeclareArrayElement($2,$4); }
+
 
 FUNC_DECLARATION : VAR_TYPE NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new DeclareFunction($1,$2); }
 

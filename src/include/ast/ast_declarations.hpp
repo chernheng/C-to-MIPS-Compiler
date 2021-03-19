@@ -161,17 +161,20 @@ class DeclareArray : public Program {
         std::string type;
         std::string id;
         DeclareArrayElement *dimensions;
-        ProgramPtr init=nullptr; //int x = 5;
+        std::string elements =""; //int x = 5;
         int ptr=0;
     public:
-        DeclareArray(std::string *_type, std::string *_id, DeclareArrayElement *_dimens, ProgramPtr _init) : type(*_type), id(*_id), dimensions(_dimens), init(_init) {
+        DeclareArray(std::string *_type, std::string *_id, DeclareArrayElement *_dimens, std::string *_elements) : type(*_type), id(*_id), dimensions(_dimens) {
+            if (_elements != nullptr){
+                elements = *_elements;
+            }
             delete _type;
             delete _id;
+            delete _elements;
         }
 
         ~DeclareArray() {
             delete dimensions;
-            delete init;
         }
 
         std::string getID() const   {
@@ -202,6 +205,9 @@ class DeclareArray : public Program {
         virtual void print(std::ostream &dst) const override    {
             dst<<type<<" "<<id;
             dimensions->print(dst);
+            if (elements != ""){
+                dst<<"={"<<elements<<"}";
+            }
             dst<<";"<<std::endl;
         }
 
@@ -224,9 +230,15 @@ class DeclareArray : public Program {
             }
             if(context->stack.lut.size()==1)    {   // global array
                 vf.isGlobal = 1;
-                if (init!=nullptr){
+                if (elements!=""){
+                    file<<"   .globl  "<<getID()<<std::endl;
+                    file<<"   .data"<<std::endl;
+                    file<<"   .type   "<<getID()<<", @object"<<std::endl;
+                    file<<"   .size     "<<getID()<<",  "<<vf.numBytes*vf.length<<std::endl;
+                    file<<getID()<<":"<<std::endl;
+                    file<<"   .word    "<<elements<<std::endl;
 
-                } else if (init == nullptr){
+                } else if (elements ==""){
                     file<<"   .globl  "<<getID()<<std::endl;
                     file<<"   .type   "<<getID()<<", @object"<<std::endl;
                     file<<"   .section        .bss,\"aw\",@nobits"<<std::endl;
@@ -244,6 +256,17 @@ class DeclareArray : public Program {
                 vf.offset=context->stack.slider-4;    // offset of base pointer
                 file<<"addiu $t1, $sp, "<<(context->stack.size - vf.offset+4)<<std::endl;   // store 1st element address into base pointer
                 file<<"sw $t1, "<<(context->stack.size - vf.offset)<<"($sp)"<<std::endl;
+                std::vector<int> vec;
+                std::stringstream ss(elements);
+                for (int i; ss >> i;) {
+                    vec.push_back(i);    
+                    if (ss.peek() == ',')
+                        ss.ignore();
+                }
+                for(unsigned int i=0;i<vec.size();i++){
+                    file<<"li $t1, "<<vec[i]<<std::endl;
+                    file<<"sw $t1, "<<(context->stack.size - vf.offset+4)+vf.numBytes*i<<"($sp)"<<std::endl;
+                }
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
         }

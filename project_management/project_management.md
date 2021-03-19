@@ -49,14 +49,14 @@ Basic Features:
 
 Intermediate features:
 ======================
-    files containing multiple functions that call each other (Test)
+-   ~~files containing multiple functions that call each other (DONE) (20th Mar) ~~
 -   ~~functions that take up to four parameters (DONE) (8th Mar)~~
--   for loops (DONE) (6th Mar)
-    arrays declared globally (i.e. outside of any function in your file)
-    arrays declared locally (i.e. inside a function)
-    reading and writing elements of an array
--   recursive function calls
-    the enum keyword
+-   ~~for loops (DONE) (6th Mar)~~
+-   ~~arrays declared globally (i.e. outside of any function in your file) (DONE) (20th Mar)~~
+-   ~~arrays declared locally (i.e. inside a function) (DONE) (20th Mar)~~
+-   ~~reading and writing elements of an array (DONE) (20th Mar)~~
+-   ~~recursive function calls (DONE) (20th Mar)~~
+-   the enum keyword
 -   ~~switch statements (DONE) (12th Mar)~~
 -   ~~the break and continue keywords (DONE) (6th Mar)~~
 
@@ -67,14 +67,14 @@ Advanced features:
 -   ~~functions that take more than four parameters (DONE) (10th Mar)
 -   ~~mutually recursive function calls~~
 -   ~~locally scoped variable declarations (e.g. a variable that is declared inside the body of a while loop, such as while(...) { int x = ...; ... } (Test) DONE (4th Mar)~~
-    the typedef keyword
-    the sizeof(...) function (which takes either a type or a variable)
+-   the typedef keyword
+-   the sizeof(...) function (which takes either a type or a variable)
 -   ~~taking the address of a variable using the & operator (DONE) (5th Mar)~~
 -   ~~dereferencing a pointer-variable using the * operator (DONE) (5th Mar)~~
 -   ~~pointer arithmetic (DONE) (5th Mar)~~
-    character literals, including escape sequences like \n
+-   character literals, including escape sequences like \n
 -   strings (as NULL-terminated character arrays)
-    declaration and use of structs
+-   declaration and use of structs
 
 Functions more than 4 args, call multiple functions cascade
 

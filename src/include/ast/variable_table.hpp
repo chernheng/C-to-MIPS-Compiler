@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <list>
 #include <iterator>
+#include <sstream>
 
 std::string makeLabel(const char* _name);
 
