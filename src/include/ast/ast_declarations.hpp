@@ -83,6 +83,7 @@ class DeclareVariable : public Program {
                 if (init!= nullptr){
                     init->generate(file, "$t7", context);
                     std::string value = context->numVal;
+                    file<<"   .data"<<std::endl;
                     file<<"   .globl  "<<getID()<<std::endl;
                     file<<"   .type   "<<getID()<<", @object"<<std::endl;
                     file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
