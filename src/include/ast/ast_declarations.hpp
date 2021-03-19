@@ -167,6 +167,8 @@ class DeclareArray : public Program {
         DeclareArray(std::string *_type, std::string *_id, DeclareArrayElement *_dimens, std::string *_elements) : type(*_type), id(*_id), dimensions(_dimens) {
             if (_elements != nullptr){
                 elements = *_elements;
+                elements.erase(elements.begin());
+                elements.erase(elements.end()-1);
             }
             delete _type;
             delete _id;

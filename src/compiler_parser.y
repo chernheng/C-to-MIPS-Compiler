@@ -76,7 +76,7 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
 
 VAR_DECLARATION : VAR_TYPE NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
                 | VAR_TYPE NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($1,$2,$3,nullptr); }    // array
-                | VAR_TYPE NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARRAY_ELEMENTS B_RCURLY SEMI_COLON {$$ = new DeclareArray($1,$2,$3,$6);}
+                | VAR_TYPE NAME ARR_DEC_INDEX OP_EQUAL ARRAY_ELEMENTS SEMI_COLON {$$ = new DeclareArray($1,$2,$3,$5);}
                 | VAR_TYPE NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
                 | VAR_TYPE NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }    
                 | VAR_TYPE OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
@@ -87,6 +87,7 @@ ARR_DEC_INDEX : B_LSQUARE NUMBER B_RSQUARE                       { $$ = new Decl
 
 
 FUNC_DECLARATION : VAR_TYPE NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new DeclareFunction($1,$2); }
+                 | VAR_TYPE NAME B_LBRACKET DEF_ARGS B_RBRACKET SEMI_COLON      { $$ = new DeclareFunction($1,$2); }
 
 FUNCTION_DEF : VAR_TYPE NAME B_LBRACKET B_RBRACKET SCOPE               { $$ = new FunctionDef($1,$2,nullptr,$5); }
              | VAR_TYPE NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($1,$2,$4,$6); }   // definition  (no arguments)
