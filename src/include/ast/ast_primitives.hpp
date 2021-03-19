@@ -82,7 +82,55 @@ class Variable : public Program {
         }
 };
 
-class ArrayIndex : public Program {
+class VariableStore : public Program {  // store vale into variable
+    private:
+        std::string id;
+    public:
+        VariableStore(std::string *_id) : id(*_id)  {
+            delete _id;
+        }
+
+        std::string getID() const   {
+            return id;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<id;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {   // value to store comes in destReg
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
+                    context->tempVarInfo = it->second;
+                    if(i>0)    { //not global (write to local variable)
+                        long offset = context->stack.size - it->second.offset;
+                        if(it->second.type=="int")  {
+                            file<<"sw "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                        }
+                    }
+                    else    {   // insert code for storing to global variable reference
+                        if(it->second.type=="int") {
+                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
+                            file<<"sw "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
+                            file<<"sb "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                        }                        
+                    }
+                    break;
+                }
+            }
+        }
+};
+
+class ArrayIndex : public Program { // handle index for array access
     private:
         ProgramPtr value;
         ProgramPtr next=nullptr;
@@ -156,9 +204,7 @@ class Array : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::unordered_map<std::string,varInfo>::iterator it;
             int n=context->stack.lut.size()-1;
-            int wtf;
             for(int i=n;i>=0;i--)   {
-                wtf=i;
                 it=context->stack.lut.at(i).find(getID());
                 if(it!=context->stack.lut.at(i).end()) {
                     context->tempVarInfo = it->second;

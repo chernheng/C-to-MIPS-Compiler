@@ -36,7 +36,7 @@
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION 
-%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT TERNARY
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT TERNARY VARIABLE_STORE
 %type <fnDefArgs> DEF_ARGS
 %type <fnCallArgs> CALL_ARGS
 %type <caseptr> CASE
@@ -161,8 +161,8 @@ STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 STATE     : ASSIGNMENT   { $$ = $1; }
           | INCREMENT    { $$ = $1; }
 
-ASSIGNMENT : VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
-           | VARIABLE OP_EQUAL TERNARY         { $$ = new AssignmentOperator($1,$3); } 
+ASSIGNMENT : VARIABLE_STORE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
+           | VARIABLE_STORE OP_EQUAL TERNARY         { $$ = new AssignmentOperator($1,$3); } 
 
 TERNARY : CONDITION OP_QUESTION MATH COLON MATH {$$ = new TernaryBlock($1,$3,$5);}
         | B_LBRACKET TERNARY B_RBRACKET {$$ = $2;}
@@ -213,6 +213,8 @@ FACTOR : VARIABLE     { $$ = $1; }    // variable
 
 
 VARIABLE : NAME   { $$ = new Variable($1); }    // variable
+
+VARIABLE_STORE : NAME    { $$ = new VariableStore($1); }    // store to variable
 
 
 
