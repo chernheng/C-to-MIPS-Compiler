@@ -224,6 +224,15 @@ class Array : public Program {  // read value in array
                         }
                     }
                     else    {   // insert code for global variable reference
+                        file<<"lui "<<std::string(destReg)<<", %hi("<<getID()<<")"<<std::endl;
+                        file<<"addiu "<<std::string(destReg)<<", "<<std::string(destReg)<<", %lo("<<getID()<<")"<<std::endl;
+                        file<<"addu "<<std::string(destReg)<<", "<<std::string(destReg)<<", $t8"<<std::endl;
+                        if(it->second.type=="int")  {  
+                            file<<"lw "<<std::string(destReg)<<", 0("<<std::string(destReg)<<")"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"lb "<<std::string(destReg)<<", 0("<<std::string(destReg)<<")"<<std::endl;
+                        }
 
                     }
                     break;
@@ -279,7 +288,15 @@ class ArrayStore : public Program {
                         }
                     }
                     else    {   // insert code for global variable reference
-
+                        file<<"move $t0, "<<std::string(destReg)<<std::endl;
+                        file<<"lui $t1, %hi("<<getID()<<")"<<std::endl;
+                        file<<"addiu $t1, $t1, %lo("<<getID()<<")"<<std::endl;
+                        file<<"addu $t1, $t1, $t8"<<std::endl;
+                        if(it->second.type=="int")  {  
+                            file<<"sw $t0, 0($t1)"<<std::endl;
+                        }else if(it->second.type=="char")    {
+                            file<<"sb $t0, 0($t1)"<<std::endl;
+                        }
                     }
                     break;
                 }

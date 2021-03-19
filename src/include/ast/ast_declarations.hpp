@@ -224,6 +224,16 @@ class DeclareArray : public Program {
             }
             if(context->stack.lut.size()==1)    {   // global array
                 vf.isGlobal = 1;
+                if (init!=nullptr){
+
+                } else if (init == nullptr){
+                    file<<"   .globl  "<<getID()<<std::endl;
+                    file<<"   .type   "<<getID()<<", @object"<<std::endl;
+                    file<<"   .section        .bss,\"aw\",@nobits"<<std::endl;
+                    file<<"   .size     "<<getID()<<",  "<<vf.numBytes*vf.length<<std::endl;
+                    file<<getID()<<":"<<std::endl;
+                    file<<"   .space    "<<vf.numBytes*vf.length<<std::endl;
+                }
             }
             else    {                               // local array
                 long space=(vf.numBytes*vf.length)+4;
