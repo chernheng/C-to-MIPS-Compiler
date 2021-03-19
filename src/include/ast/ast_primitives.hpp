@@ -48,9 +48,7 @@ class Variable : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
             std::unordered_map<std::string,varInfo>::iterator it;
             int n=context->stack.lut.size()-1;
-            int wtf;
             for(int i=n;i>=0;i--)   {
-                wtf=i;
                 it=context->stack.lut.at(i).find(getID());
                 if(it!=context->stack.lut.at(i).end()) {
                     context->tempVarInfo = it->second;
