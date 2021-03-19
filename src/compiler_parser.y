@@ -36,11 +36,12 @@
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION 
-%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT TERNARY
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT TERNARY VARIABLE_STORE
 %type <fnDefArgs> DEF_ARGS
 %type <fnCallArgs> CALL_ARGS
 %type <caseptr> CASE
 %type <arrDecElements> ARR_DEC_INDEX
+%type <arrIndex> ARRAY_INDEX
 
 
 %start ROOT
@@ -161,8 +162,8 @@ STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
 STATE     : ASSIGNMENT   { $$ = $1; }
           | INCREMENT    { $$ = $1; }
 
-ASSIGNMENT : VARIABLE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
-           | VARIABLE OP_EQUAL TERNARY         { $$ = new AssignmentOperator($1,$3); } 
+ASSIGNMENT : VARIABLE_STORE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
+           | VARIABLE_STORE OP_EQUAL TERNARY         { $$ = new AssignmentOperator($1,$3); } 
 
 TERNARY : CONDITION OP_QUESTION MATH COLON MATH {$$ = new TernaryBlock($1,$3,$5);}
         | B_LBRACKET TERNARY B_RBRACKET {$$ = $2;}
@@ -211,8 +212,14 @@ FACTOR : VARIABLE     { $$ = $1; }    // variable
        | FUNCTION { $$ = $1;}
        | B_LBRACKET MATH B_RBRACKET { $$ = $2; }
 
+VARIABLE : NAME               { $$ = new Variable($1); }    // variable
+         | NAME ARRAY_INDEX   { $$ = new Array($1,$2); }
 
-VARIABLE : NAME   { $$ = new Variable($1); }    // variable
+ARRAY_INDEX : B_LSQUARE MATH B_RSQUARE                 { $$ = new ArrayIndex($2,nullptr); }    // handle array index
+            | B_LSQUARE MATH B_RSQUARE ARRAY_INDEX     { $$ = new ArrayIndex($2,$4); }
+
+VARIABLE_STORE : NAME              { $$ = new VariableStore($1); }    // store to variable or array
+               | NAME ARRAY_INDEX  { $$ = new ArrayStore($1,$2); }
 
 
 

@@ -56,15 +56,16 @@ class AssignmentOperator : public Operator {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            long offset=getLeft()->getOffset(context);
-            std::string t=getLeft()->getVarType(context);
+            // long offset=getLeft()->getOffset(context);
+            // std::string t=getLeft()->getVarType(context);
             getRight()->generate(file, "$t0", context);
-            if(t=="int")    {
-                file<<"sw $t0, "<<offset<<"($sp)"<<std::endl;
-            }
-            else if(t=="char")  {
-                file<<"sb $t0, "<<offset<<"($sp)"<<std::endl;
-            }
+            getLeft()->generate(file, "$t0", context);
+            // if(t=="int")    {
+            //     file<<"sw $t0, "<<offset<<"($sp)"<<std::endl;
+            // }
+            // else if(t=="char")  {
+            //     file<<"sb $t0, "<<offset<<"($sp)"<<std::endl;
+            // }
             file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
         }
 };

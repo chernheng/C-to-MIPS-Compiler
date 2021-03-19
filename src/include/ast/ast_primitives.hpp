@@ -82,7 +82,55 @@ class Variable : public Program {
         }
 };
 
-class ArrayIndex : public Program {
+class VariableStore : public Program {  // store vale into variable
+    private:
+        std::string id;
+    public:
+        VariableStore(std::string *_id) : id(*_id)  {
+            delete _id;
+        }
+
+        std::string getID() const   {
+            return id;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<id;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {   // value to store comes in destReg
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
+                    context->tempVarInfo = it->second;
+                    if(i>0)    { //not global (write to local variable)
+                        long offset = context->stack.size - it->second.offset;
+                        if(it->second.type=="int")  {
+                            file<<"sw "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                        }
+                    }
+                    else    {   // insert code for storing to global variable reference
+                        if(it->second.type=="int") {
+                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
+                            file<<"sw "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
+                            file<<"sb "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                        }                        
+                    }
+                    break;
+                }
+            }
+        }
+};
+
+class ArrayIndex : public Program { // handle index for array access
     private:
         ProgramPtr value;
         ProgramPtr next=nullptr;
@@ -118,7 +166,7 @@ class ArrayIndex : public Program {
                 context->indexCounter--;
             }
             value->generate(file, "$t5", context);
-            file<<"li $t4, "<<context->vfPointer->blockSize.at(context->indexCounter)<<std::endl;
+            file<<"li $t4, "<<context->vfPointer->blockSize.at(context->indexCounter)<<std::endl;   // load block size?
             file<<"mult $t4, $t5"<<std::endl;
             file<<"mflo "<<std::string(destReg)<<std::endl;
             if(next!=nullptr)   {
@@ -127,7 +175,7 @@ class ArrayIndex : public Program {
         }
 };
 
-class Array : public Program {
+class Array : public Program {  // read value in array
     private:
         std::string id;
         ArrayIndex *index;
@@ -156,9 +204,7 @@ class Array : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::unordered_map<std::string,varInfo>::iterator it;
             int n=context->stack.lut.size()-1;
-            int wtf;
             for(int i=n;i>=0;i--)   {
-                wtf=i;
                 it=context->stack.lut.at(i).find(getID());
                 if(it!=context->stack.lut.at(i).end()) {
                     context->tempVarInfo = it->second;
@@ -175,6 +221,61 @@ class Array : public Program {
                         else if(it->second.type=="char")    {
                             file<<"lb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
                             // file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                        }
+                    }
+                    else    {   // insert code for global variable reference
+
+                    }
+                    break;
+                }
+            }
+        }
+};
+
+class ArrayStore : public Program {
+    private:
+        std::string id;
+        ArrayIndex *index;
+    public:
+        ArrayStore(std::string *_id, ArrayIndex *_index) : id(*_id), index(_index) {
+            delete _id;
+        }
+
+        ~ArrayStore() {
+            delete index;
+        }
+
+        std::string getID() const {
+            return id;
+        }
+
+        ProgramPtr getIndex() const    {
+            return index;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<getID();
+            index->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
+                    context->tempVarInfo = it->second;
+                    context->vfPointer = &it->second;
+                    context->indexCounter=0;
+                    index->generate(file, "$t8", context);  // load element relative offset into $t8
+                    if(i>0)    {
+                        file<<"lw $t5, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;    // load array base address into $t5
+                        file<<"addu $t9, $t5, $t8"<<std::endl;      // add element offset to base address to get element address
+                        if(it->second.type=="int")  {          
+                            file<<"sw "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                        }
+                        else if(it->second.type=="char")    {
+                            file<<"sb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
                         }
                     }
                     else    {   // insert code for global variable reference
