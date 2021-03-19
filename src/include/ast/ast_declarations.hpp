@@ -47,12 +47,17 @@ class DeclareVariable : public Program {
         }
 
         virtual long spaceRequired() const override {
+            long tmp=0;
             if(type=="int" || type=="char")  {
-                return 4;
+                tmp = 4;
             }
             else    {       // temporary, replace later with size requirements of other variable types
-                return 0;
+                tmp = 0;
             }
+            if(init!=nullptr)   {
+                tmp += init->spaceRequired();
+            }
+            return tmp;
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
@@ -93,7 +98,7 @@ class DeclareVariable : public Program {
                 }
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
-
+            context->stack.slider+=4;
             if((init!=nullptr)&&(size!=1))   {
                 if (size != 1){
                     init->generate(file, "$t7", context);
@@ -105,7 +110,7 @@ class DeclareVariable : public Program {
                     file<<"sb $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
                 }
             }
-            context->stack.slider+=4;
+            // context->stack.slider+=4;
             file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
             return;                        
         }
