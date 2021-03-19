@@ -45,7 +45,7 @@ struct Context {
     VarLUT stack;
     std::unordered_map<std::string,functionInfo> ftable;
     std::unordered_map<std::string,functionInfo>::iterator ftEntry;
-    std::unordered_map<std::string,typeInfo> typeLUT;
+    std::unordered_map<std::string,typeInfo> typeTable;
     std::string LoopStartPoint="";
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";
