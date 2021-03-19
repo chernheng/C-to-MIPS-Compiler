@@ -23,6 +23,7 @@ continue        { return KW_CONTINUE;}
 switch          { return KW_SWITCH;}
 case            { return KW_CASE;}
 default         { return KW_DEFAULT;}
+sizeof          { return KW_SIZEOF; }
 
 "{"             { return B_LCURLY;}
 "}"             { return B_RCURLY;}
