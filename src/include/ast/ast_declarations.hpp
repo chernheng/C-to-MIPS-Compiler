@@ -288,4 +288,27 @@ class DeclareFunction : public Program {
         }
 };
 
+class DeclareTypeDef : public Program {
+    private:
+        std::string id;
+        std::string bind_type;
+        int ptr=0;
+    public:
+        DeclareTypeDef(std::string *_bn, std::string *_id, int _ptr) : id(*_id), bind_type(*_bn), ptr(_ptr) {
+            delete _id;
+            delete _bn;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"typedef "<<bind_type<<" "<<id<<";"<<std::endl;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            typeInfo tmp;
+            tmp.type = bind_type;
+            tmp.ptr = ptr;
+            context->typeTable.insert(std::pair<std::string,typeInfo>(id,tmp));
+        }
+};
+
 #endif

@@ -216,11 +216,9 @@ class Array : public Program {  // read value in array
                         file<<"addu $t9, $t5, $t8"<<std::endl;      // add element offset to base address to get element address
                         if(it->second.type=="int")  {          
                             file<<"lw "<<std::string(destReg)<<", 0($t9)"<<std::endl;      
-                            // file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                         }
                         else if(it->second.type=="char")    {
                             file<<"lb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
-                            // file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                         }
                     }
                     else    {   // insert code for global variable reference
@@ -241,7 +239,7 @@ class Array : public Program {  // read value in array
         }
 };
 
-class ArrayStore : public Program {
+class ArrayStore : public Program {     // store value into array
     private:
         std::string id;
         ArrayIndex *index;
@@ -262,6 +260,10 @@ class ArrayStore : public Program {
             return index;
         }
 
+        virtual long spaceRequired() const override {
+            return 4;
+        }
+
         virtual void print(std::ostream &dst) const override    {
             dst<<getID();
             index->print(dst);
@@ -269,6 +271,9 @@ class ArrayStore : public Program {
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::unordered_map<std::string,varInfo>::iterator it;
+            int offset = context->stack.slider;
+            file<<"sw "<<std::string(destReg)<<", "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
             int n=context->stack.lut.size()-1;
             for(int i=n;i>=0;i--)   {
                 it=context->stack.lut.at(i).find(getID());
@@ -277,18 +282,18 @@ class ArrayStore : public Program {
                     context->vfPointer = &it->second;
                     context->indexCounter=0;
                     index->generate(file, "$t8", context);  // load element relative offset into $t8
+                    file<<"lw $t0, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
                     if(i>0)    {
                         file<<"lw $t5, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;    // load array base address into $t5
                         file<<"addu $t9, $t5, $t8"<<std::endl;      // add element offset to base address to get element address
                         if(it->second.type=="int")  {          
-                            file<<"sw "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                            file<<"sw $t0, 0($t9)"<<std::endl;
                         }
                         else if(it->second.type=="char")    {
-                            file<<"sb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                            file<<"sb $t0, 0($t9)"<<std::endl;
                         }
                     }
                     else    {   // insert code for global variable reference
-                        file<<"move $t0, "<<std::string(destReg)<<std::endl;
                         file<<"lui $t1, %hi("<<getID()<<")"<<std::endl;
                         file<<"addiu $t1, $t1, %lo("<<getID()<<")"<<std::endl;
                         file<<"addu $t1, $t1, $t8"<<std::endl;
@@ -301,6 +306,7 @@ class ArrayStore : public Program {
                     break;
                 }
             }
+            context->stack.slider-=4;
         }
 };
 

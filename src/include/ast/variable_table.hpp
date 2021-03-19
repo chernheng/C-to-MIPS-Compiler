@@ -30,6 +30,11 @@ struct functionInfo {
     std::vector<varInfo> argList;
 };
 
+struct typeInfo {
+    std::string type;
+    int ptr=0;
+};
+
 struct VarLUT {
     long size=0;
     long slider=0;
@@ -41,6 +46,7 @@ struct Context {
     VarLUT stack;
     std::unordered_map<std::string,functionInfo> ftable;
     std::unordered_map<std::string,functionInfo>::iterator ftEntry;
+    std::unordered_map<std::string,typeInfo> typeTable;
     std::string LoopStartPoint="";
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";
@@ -56,6 +62,5 @@ struct Context {
     int ArgCount=0;
     long indexCounter=0;
 };
-
 
 #endif
