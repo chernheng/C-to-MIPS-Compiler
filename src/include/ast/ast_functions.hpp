@@ -168,8 +168,8 @@ class FunctionCall : public Program {   // function call
             }
             // file<<"sw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;    // store $ra
             file<<"sw $ra, "<<RAoffset<<"($sp)"<<std::endl;
-            file<<"addiu $sp, $sp, -4"<<std::endl;
-            context->stack.slider+=4;
+            // file<<"addiu $sp, $sp, -4"<<std::endl;
+            // context->stack.slider+=4;
 
             if(args!=nullptr)   {                           // load arguments (if any)
                 context->ArgCount=0;
@@ -183,8 +183,8 @@ class FunctionCall : public Program {   // function call
             file<<".option pic2"<<std::endl;
             file<<"move "<<std::string(destReg)<<", $v0"<<std::endl;    // store return value into destReg
 
-            context->stack.slider-=4;
-            file<<"addiu $sp, $sp, 4"<<std::endl;
+            // context->stack.slider-=4;
+            // file<<"addiu $sp, $sp, 4"<<std::endl;
             // file<<"lw $ra, "<<(context->stack.size - RAoffset)<<"($sp)"<<std::endl;     // retore value of $ra
             file<<"lw $ra, "<<RAoffset<<"($sp)"<<std::endl;
             context->stack.slider = initSL;         // load previous context
