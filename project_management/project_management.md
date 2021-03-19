@@ -49,7 +49,7 @@ Basic Features:
 
 Intermediate features:
 ======================
--   ~~files containing multiple functions that call each other (DONE) (20th Mar) ~~
+-   ~~files containing multiple functions that call each other (DONE) (20th Mar)~~
 -   ~~functions that take up to four parameters (DONE) (8th Mar)~~
 -   ~~for loops (DONE) (6th Mar)~~
 -   ~~arrays declared globally (i.e. outside of any function in your file) (DONE) (20th Mar)~~
@@ -64,7 +64,7 @@ Advanced features:
 ======================
 -   variables of double, float, char, unsigned, structs, and pointer types
 -   calling externally-defined functions (i.e. the file being compiled declares a function, but its definition is provided in a different file that is linked in later on)
--   ~~functions that take more than four parameters (DONE) (10th Mar)
+-   ~~functions that take more than four parameters (DONE) (10th Mar)~~
 -   ~~mutually recursive function calls~~
 -   ~~locally scoped variable declarations (e.g. a variable that is declared inside the body of a while loop, such as while(...) { int x = ...; ... } (Test) DONE (4th Mar)~~
 -   the typedef keyword
