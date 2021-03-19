@@ -41,6 +41,7 @@
 %type <fnCallArgs> CALL_ARGS
 %type <caseptr> CASE
 %type <arrDecElements> ARR_DEC_INDEX
+%type <arrIndex> ARRAY_INDEX
 
 
 %start ROOT
@@ -211,10 +212,14 @@ FACTOR : VARIABLE     { $$ = $1; }    // variable
        | FUNCTION { $$ = $1;}
        | B_LBRACKET MATH B_RBRACKET { $$ = $2; }
 
+VARIABLE : NAME               { $$ = new Variable($1); }    // variable
+         | NAME ARRAY_INDEX   { $$ = new Array($1,$2); }
 
-VARIABLE : NAME   { $$ = new Variable($1); }    // variable
+ARRAY_INDEX : B_LSQUARE MATH B_RSQUARE                 { $$ = new ArrayIndex($2,nullptr); }    // handle array index
+            | B_LSQUARE MATH B_RSQUARE ARRAY_INDEX     { $$ = new ArrayIndex($2,$4); }
 
-VARIABLE_STORE : NAME    { $$ = new VariableStore($1); }    // store to variable
+VARIABLE_STORE : NAME              { $$ = new VariableStore($1); }    // store to variable or array
+               | NAME ARRAY_INDEX  { $$ = new ArrayStore($1,$2); }
 
 
 

@@ -216,7 +216,8 @@ class DeclareArray : public Program {
                 vf.numBytes=1;
                 vf.type="char";
             }
-            vf.length = dimensions->spaceRequired()-4;    // number of elements (removing 4 bytes used for base pointer)
+            dimensions->generate(file, "t0", context);
+            vf.length = dimensions->spaceRequired();    // number of elements (removing 4 bytes used for base pointer) (ok maybe not)
             vf.blockSize.back() = vf.numBytes;
             for(long i=vf.blockSize.size()-2;i>=0;i--)  {                          // build block table
                 vf.blockSize.at(i) = vf.dimension.at(i+1) * vf.blockSize.at(i+1);
@@ -225,7 +226,7 @@ class DeclareArray : public Program {
                 vf.isGlobal = 1;
             }
             else    {                               // local array
-                long space=vf.numBytes*vf.length;
+                long space=(vf.numBytes*vf.length)+4;
                 if(space % 4)   {
                     space+=4-(space%4);
                 }
