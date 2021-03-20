@@ -118,14 +118,14 @@ class VariableStore : public Program {  // store vale into variable
                     context->tempVarInfo = it->second;
                     if(i>0)    { //not global (write to local variable)
                         long offset = context->stack.size - it->second.offset;
-                        if (context->tempVarInfo.isPtr==0){
+                        if (getPtr()==0){
                             if(it->second.type=="int")  {
                                 file<<"sw "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                             }
                             else if(it->second.type=="char")    {
                                 file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                             }
-                        } else if (context->tempVarInfo.isPtr==1){
+                        } else if (getPtr()==1){
                             if(it->second.type=="int")  {
                                 file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                                 file<<"sw "<<destReg<<", 0($t1)"<<std::endl;
