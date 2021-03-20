@@ -164,7 +164,7 @@ class DeclareArray : public Program {
         std::string type;
         std::string id;
         DeclareArrayElement *dimensions;
-        ProgramPtr init =nullptr; //int x = 5;
+        ProgramPtr init = nullptr; //int x = 5;  (Array_Init class)
         int ptr=0;
     public:
         DeclareArray(std::string *_type, std::string *_id, DeclareArrayElement *_dimens, ProgramPtr _init) : type(*_type), id(*_id), dimensions(_dimens), init(_init) {
@@ -261,10 +261,12 @@ class DeclareArray : public Program {
                 vf.offset=context->stack.slider-4;    // offset of base pointer
                 file<<"addiu $t1, $sp, "<<(context->stack.size - vf.offset+4)<<std::endl;   // store 1st element address into base pointer
                 file<<"sw $t1, "<<(context->stack.size - vf.offset)<<"($sp)"<<std::endl;
-                // for(unsigned int i=0;i<vec.size();i++){
-                //     file<<"li $t1, "<<vec[i]<<std::endl;
-                //     file<<"sw $t1, "<<(context->stack.size - vf.offset+4)+vf.numBytes*i<<"($sp)"<<std::endl;
-                // }
+                if(init!=nullptr)   {   // initilise array values if required ($t1 contains address of first index)
+                    long initIC = context->indexCounter;
+                    context->indexCounter=0;
+                    init->generate(file, "$t1", context);
+                    context->indexCounter=initIC;
+                }
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
         }
@@ -296,10 +298,25 @@ class Array_Init : public Program {  // read value in array
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            file<<getValue();
-            if(next!=nullptr){
-                file<<",";
-                next->generate(file,destReg,context);
+            if(context->vfPointer->isGlobal==1) {           // initilise values for global array
+                file<<getValue();
+                if(next!=nullptr){
+                    file<<",";
+                    next->generate(file,destReg,context);
+                }
+            }
+            else    {                                       // initialise values for local array
+                file<<"li $t0, "<<getValue()<<std::endl;
+                if(context->vfPointer->numBytes==1) {
+                    file<<"sb $t0, "<<context->indexCounter<<"($t1)"<<std::endl;
+                }
+                else    {
+                    file<<"sw $t0, "<<context->indexCounter<<"($t1)"<<std::endl;
+                }
+                if(next!=nullptr)   {
+                    context->indexCounter+=context->vfPointer->numBytes;
+                    next->generate(file, "$t1", context);
+                }
             }
         }
 };
