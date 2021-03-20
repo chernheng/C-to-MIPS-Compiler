@@ -15,9 +15,9 @@ class Branch : public Program {
             return action;
         }
 
-        virtual long spaceRequired() const override {
+        virtual long spaceRequired(Context *context) const override {
             if(getAction()!=nullptr) {
-                return getAction()->spaceRequired();
+                return getAction()->spaceRequired(context);
             }
             else    {
                 return 0;
@@ -51,14 +51,14 @@ class IfBlock : public Branch {
             return elsePtr;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = getAction()->spaceRequired();
-            tmp+=getCondition()->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = getAction()->spaceRequired(context);
+            tmp+=getCondition()->spaceRequired(context);
             if(getElseIf()!=nullptr)    {
-                tmp+=getElseIf()->spaceRequired();
+                tmp+=getElseIf()->spaceRequired(context);
             }
             if(getElse()!=nullptr)    {
-                tmp+=getElse()->spaceRequired();
+                tmp+=getElse()->spaceRequired(context);
             }
             return tmp;
         }
@@ -145,11 +145,11 @@ class ElseIfBlock : public Branch {
             return next;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = getAction()->spaceRequired();
-            tmp+=getCondition()->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = getAction()->spaceRequired(context);
+            tmp+=getCondition()->spaceRequired(context);
             if(getNext()!=nullptr)  {
-                tmp+=getNext()->spaceRequired();
+                tmp+=getNext()->spaceRequired(context);
             }
             return tmp;
         }
@@ -212,14 +212,14 @@ class CaseBlock : public Branch {
             return defaultAction;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = getAction()->spaceRequired();
-            tmp+=getConstant()->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = getAction()->spaceRequired(context);
+            tmp+=getConstant()->spaceRequired(context);
             if(getNextCase()!=nullptr)  {
-                tmp+=getNextCase()->spaceRequired();
+                tmp+=getNextCase()->spaceRequired(context);
             }
             if(getDefaultAction()!=nullptr)  {
-                tmp+=getDefaultAction()->spaceRequired();
+                tmp+=getDefaultAction()->spaceRequired(context);
             }
             
             return tmp;
@@ -309,10 +309,10 @@ class SwitchBlock : public Branch {
             return casePtr;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = getExpr()->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = getExpr()->spaceRequired(context);
             if(getCasePtr()!=nullptr)    {
-                tmp+=getCasePtr()->spaceRequired();
+                tmp+=getCasePtr()->spaceRequired(context);
             }
             return tmp;
         }
@@ -339,7 +339,7 @@ class SwitchBlock : public Branch {
             long initStackSize = context->stack.size;
             long initSliderVal=context->stack.slider;
             context->stack.slider=context->stack.size;
-            long delta=spaceRequired();
+            long delta=spaceRequired(context);
             context->stack.size+=delta;
             if(delta>0) {
                 file<<"addiu $sp, $sp, -"<<delta<<std::endl;
@@ -389,10 +389,10 @@ class TernaryBlock : public Branch {
             return falseExpr;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = getAction()->spaceRequired();
-            tmp+=getCondition()->spaceRequired();
-            tmp+=getFalse()->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = getAction()->spaceRequired(context);
+            tmp+=getCondition()->spaceRequired(context);
+            tmp+=getFalse()->spaceRequired(context);
             return tmp;
         }
 

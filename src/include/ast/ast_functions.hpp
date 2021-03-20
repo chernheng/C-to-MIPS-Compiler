@@ -44,13 +44,13 @@ class FunctionDefArgs : public FunctionArgs {
             delete _id;
         }
 
-        virtual long spaceRequired() const override {
+        virtual long spaceRequired(Context *context) const override {
             long tmp=0;
             if(type=="int" || type=="char")  {
                 tmp=4;
             }
             if(next!=nullptr)   {
-                tmp+=next->spaceRequired();
+                tmp+=next->spaceRequired(context);
             }
             return tmp;
         }
@@ -101,10 +101,10 @@ class FunctionCallArgs : public FunctionArgs {
             }
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = action->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = action->spaceRequired(context);
             if(next!=nullptr)   {
-                tmp+=next->spaceRequired();
+                tmp+=next->spaceRequired(context);
             }
             return tmp;
         }
@@ -137,14 +137,14 @@ class FunctionCall : public Program {   // function call
             delete args;
         }
         
-        virtual long spaceRequired() const override {
+        virtual long spaceRequired(Context *context) const override {
             if(args!=nullptr)   {
                 long count = args->getCount();
                 long space = (4*count)+8;
                 if(space<32)    {               // set minimum space required to 20 bytes to accomodate $a0 - $a3 and some padding
                     space=32;
                 }
-                space+=args->spaceRequired();
+                space+=args->spaceRequired(context);
                 return space;
             }
             else    {

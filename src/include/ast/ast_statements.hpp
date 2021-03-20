@@ -27,9 +27,9 @@ class ReturnStatement : public Program {
             }
         }
 
-        virtual long spaceRequired() const override {
+        virtual long spaceRequired(Context *context) const override {
             if(getAction()!=nullptr)    {
-                return getAction()->spaceRequired();
+                return getAction()->spaceRequired(context);
             }
             else    {
                 return 0;

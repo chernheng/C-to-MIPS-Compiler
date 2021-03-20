@@ -10,7 +10,7 @@ extern "C" int fileno(FILE *stream);
 Types (int)|(char)|(float)|(double)|(void)
 
 %%
-{Types}         { yylval.string= new std::string(yytext); return VAR_TYPE;}
+  // {Types}         { yylval.string= new std::string(yytext); return VAR_TYPE;}
 unsigned        { return KW_UNSIGNED;}
 "else if"       { return KW_ELIF;}
 if              { return KW_IF;} 
@@ -24,6 +24,7 @@ switch          { return KW_SWITCH;}
 case            { return KW_CASE;}
 default         { return KW_DEFAULT;}
 sizeof          { return KW_SIZEOF; }
+typedef         { return KW_TYPEDEF; }
 
 
 "{"             { return B_LCURLY;}
@@ -43,7 +44,7 @@ sizeof          { return KW_SIZEOF; }
 "||"            { return COND_OR;}
 [!]             { return COND_NOT;}
 
-[=]               { return OP_EQUAL;}
+[=]             { return OP_EQUAL;}
 [*]             { return OP_TIMES; }
 [+]             { return OP_PLUS; }
 [\^]            { return OP_XOR; }

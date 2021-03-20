@@ -19,7 +19,7 @@ class Program {
             return "";
         }
 
-        virtual long spaceRequired() const  {
+        virtual long spaceRequired(Context *context) const  {
             return 0;
         }
 
@@ -46,10 +46,10 @@ class Command : public Program { //each line of a program is a command, it is wr
             delete next;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = action->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = action->spaceRequired(context);
             if(next!=nullptr)   {
-                tmp += next->spaceRequired();
+                tmp += next->spaceRequired(context);
             }
             return tmp;
         }
@@ -66,7 +66,7 @@ class Command : public Program { //each line of a program is a command, it is wr
             if(context->stack.lut.size()==0) {
                 std::unordered_map<std::string,varInfo> tmp;
                 context->stack.lut.push_back(tmp);
-                long stackSize = spaceRequired();
+                long stackSize = spaceRequired(context);
                 context->stack.size = stackSize;
                 file<<"addiu $sp, $sp, -"<<stackSize<<std::endl;
             }
@@ -103,7 +103,7 @@ class Scope : public Program {
                 long initStackSize = context->stack.size;
                 long initSliderVal=context->stack.slider;
                 context->stack.slider=context->stack.size;
-                long delta=action->spaceRequired();
+                long delta=action->spaceRequired(context);
                 context->stack.size+=delta;
                 if(delta>0) {
                     file<<"addiu $sp, $sp, -"<<delta<<std::endl;

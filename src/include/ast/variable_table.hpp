@@ -31,7 +31,8 @@ struct functionInfo {
 };
 
 struct typeInfo {
-    std::string type;
+    std::string type="";
+    long size=0;
     int ptr=0;
 };
 

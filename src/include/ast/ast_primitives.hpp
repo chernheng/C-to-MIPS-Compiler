@@ -57,11 +57,11 @@ class Variable : public Program {
                         if(context->tempVarInfo.isPtr==1) {
                             file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                         }
-                        else if(it->second.type=="int")  {                
-                            file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
-                        }
-                        else if(it->second.type=="char")    {
+                        else if(it->second.numBytes==1)    {
                             file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                        }
+                        else    {
+                            file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                         }
                     }
                     else    {   // insert code for global variable reference
@@ -71,17 +71,7 @@ class Variable : public Program {
                     }
                     break;
                 }
-            }
-            // if(it!=context->stack.lut.at(wtf).end()) {
-            //     context->tempVarInfo = it->second;
-            //     long offset = context->stack.size - it->second.offset;
-            //     if(it->second.type=="int")  {                
-            //         file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
-            //     }
-            //     else if(it->second.type=="char")    {
-            //         file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
-            //     }
-            // }            
+            }           
         }
 };
 
@@ -119,33 +109,32 @@ class VariableStore : public Program {  // store vale into variable
                     if(i>0)    { //not global (write to local variable)
                         long offset = context->stack.size - it->second.offset;
                         if (getPtr()==0){
-                            if(it->second.type=="int")  {
-                                file<<"sw "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
-                            }
-                            else if(it->second.type=="char")    {
+                            if(it->second.numBytes==1)    {
                                 file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                             }
-                        } else if (getPtr()==1){
-                            if(it->second.type=="int")  {
-                                file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
-                                file<<"sw "<<destReg<<", 0($t1)"<<std::endl;
+                            else    {
+                                file<<"sw "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                             }
-                            else if(it->second.type=="char")    {
+                        } else if (getPtr()==1){
+                            if(it->second.numBytes==1)    {
                                 file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                                 file<<"sb "<<destReg<<", 0($t1)"<<std::endl;
                             }
-
+                            else    {
+                                file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                                file<<"sw "<<destReg<<", 0($t1)"<<std::endl;
+                            }
                         }
                     }
                     else    {   // insert code for storing to global variable reference
-                        if(it->second.type=="int") {
+                        if(it->second.numBytes==1)    {
+                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
+                            file<<"sb "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                        }
+                        else    {
                             file<<"lui $t1, %hi("<<id<<")"<<std::endl;
                             file<<"sw "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
                         }
-                        else if(it->second.type=="char")    {
-                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
-                            file<<"sb "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
-                        }                        
                     }
                     break;
                 }
@@ -165,10 +154,10 @@ class ArrayIndex : public Program { // handle index for array access
             delete next;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp = value->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = value->spaceRequired(context);
             if(next!=nullptr)   {
-                tmp+=next->spaceRequired();
+                tmp+=next->spaceRequired(context);
             }
             return tmp;
         }
@@ -246,22 +235,22 @@ class Array : public Program {  // read value in array
                     if(i>0)    {
                         file<<"lw $t5, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;    // load array base address into $t5
                         file<<"addu $t9, $t5, $t8"<<std::endl;      // add element offset to base address to get element address
-                        if(it->second.type=="int")  {          
-                            file<<"lw "<<std::string(destReg)<<", 0($t9)"<<std::endl;      
-                        }
-                        else if(it->second.type=="char")    {
+                        if(it->second.numBytes==1)    {
                             file<<"lb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                        }
+                        else    {
+                            file<<"lw "<<std::string(destReg)<<", 0($t9)"<<std::endl;   
                         }
                     }
                     else    {   // insert code for global variable reference
                         file<<"lui "<<std::string(destReg)<<", %hi("<<getID()<<")"<<std::endl;
                         file<<"addiu "<<std::string(destReg)<<", "<<std::string(destReg)<<", %lo("<<getID()<<")"<<std::endl;
                         file<<"addu "<<std::string(destReg)<<", "<<std::string(destReg)<<", $t8"<<std::endl;
-                        if(it->second.type=="int")  {  
-                            file<<"lw "<<std::string(destReg)<<", 0("<<std::string(destReg)<<")"<<std::endl;
-                        }
-                        else if(it->second.type=="char")    {
+                        if(it->second.numBytes==1)    {
                             file<<"lb "<<std::string(destReg)<<", 0("<<std::string(destReg)<<")"<<std::endl;
+                        }
+                        else    {
+                            file<<"lw "<<std::string(destReg)<<", 0("<<std::string(destReg)<<")"<<std::endl;
                         }
 
                     }
@@ -292,7 +281,7 @@ class ArrayStore : public Program {     // store value into array
             return index;
         }
 
-        virtual long spaceRequired() const override {
+        virtual long spaceRequired(Context *context) const override {
             return 4;
         }
 
@@ -318,21 +307,22 @@ class ArrayStore : public Program {     // store value into array
                     if(i>0)    {
                         file<<"lw $t5, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;    // load array base address into $t5
                         file<<"addu $t9, $t5, $t8"<<std::endl;      // add element offset to base address to get element address
-                        if(it->second.type=="int")  {          
-                            file<<"sw $t0, 0($t9)"<<std::endl;
-                        }
-                        else if(it->second.type=="char")    {
+                        if(it->second.numBytes==1)    {
                             file<<"sb $t0, 0($t9)"<<std::endl;
+                        }
+                        else    {
+                            file<<"sw $t0, 0($t9)"<<std::endl;
                         }
                     }
                     else    {   // insert code for global variable reference
                         file<<"lui $t1, %hi("<<getID()<<")"<<std::endl;
                         file<<"addiu $t1, $t1, %lo("<<getID()<<")"<<std::endl;
                         file<<"addu $t1, $t1, $t8"<<std::endl;
-                        if(it->second.type=="int")  {  
-                            file<<"sw $t0, 0($t1)"<<std::endl;
-                        }else if(it->second.type=="char")    {
+                        if(it->second.numBytes==1)    {
                             file<<"sb $t0, 0($t1)"<<std::endl;
+                        }
+                        else    {
+                            file<<"sw $t0, 0($t1)"<<std::endl;
                         }
                     }
                     break;

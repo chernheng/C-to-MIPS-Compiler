@@ -23,13 +23,13 @@ class Operator : public Program {
             return right;
         }
 
-        virtual long spaceRequired() const override {
+        virtual long spaceRequired(Context *context) const override {
             long tmp=4;
             if(left!=nullptr)   {
-                tmp+=left->spaceRequired();
+                tmp+=left->spaceRequired(context);
             }
             if(right!=nullptr)  {
-                tmp+=right->spaceRequired();
+                tmp+=right->spaceRequired(context);
             }
             return tmp;
         }
@@ -51,8 +51,8 @@ class AssignmentOperator : public Operator {
     public:
         AssignmentOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
 
-        virtual long spaceRequired() const override  {   // pass through space requirement of right operator
-            return getRight()->spaceRequired();
+        virtual long spaceRequired(Context *context) const override  {   // pass through space requirement of right operator
+            return getRight()->spaceRequired(context);
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {

@@ -46,16 +46,17 @@ class DeclareVariable : public Program {
             dst<<";";
         }
 
-        virtual long spaceRequired() const override {
-            long tmp=0;
-            if(type=="int" || type=="char")  {
-                tmp = 4;
-            }
-            else    {       // temporary, replace later with size requirements of other variable types
-                tmp = 0;
+        virtual long spaceRequired(Context *context) const override {
+            long tmp=1;     // store size of 1 element (in bytes)
+            std::unordered_map<std::string,typeInfo>::iterator typeIT;
+            std::string bind_name = type;
+            while(bind_name!="")    {
+                typeIT = context->typeTable.find(bind_name);
+                bind_name=typeIT->second.type;
+                tmp*=typeIT->second.size;
             }
             if(init!=nullptr)   {
-                tmp += init->spaceRequired();
+                tmp += init->spaceRequired(context);
             }
             return tmp;
         }
@@ -67,16 +68,19 @@ class DeclareVariable : public Program {
             vf.offset=offset;
             vf.length=1;
             vf.isPtr =getPtr();
-            int stackInc=0;
-            if(getType()=="int")    {
-                vf.type="int";
-                vf.numBytes=4;
-                stackInc=4;
-            }
-            else if(getType()=="char")  {
-                vf.type="char";
-                vf.numBytes=1;
-                stackInc=1;
+            vf.type = type;
+            vf.numBytes=1;
+            int stackInc=1;
+            std::unordered_map<std::string,typeInfo>::iterator typeIT;
+            std::string bindType = type;
+            while(bindType!="") {
+                typeIT = context->typeTable.find(bindType);
+                bindType = typeIT->second.type;
+                vf.numBytes*=typeIT->second.size;
+                stackInc*=typeIT->second.size;
+                if(typeIT->second.ptr > vf.isPtr)   {
+                    vf.isPtr = typeIT->second.ptr;
+                }
             }
             if (size == 1) {
                 vf.isGlobal = 1;
@@ -134,9 +138,9 @@ class DeclareArrayElement : public Program {
             delete next;
         }
 
-        virtual long spaceRequired() const override {   // returns number of elements in current and subsequent nodes
+        virtual long spaceRequired(Context *context) const override {   // returns number of elements in current and subsequent nodes
             if(next!=nullptr)   {
-                return n * next->spaceRequired();
+                return n * next->spaceRequired(context);
             }
             else    {
                 return n;
@@ -185,20 +189,17 @@ class DeclareArray : public Program {
             return type;
         }
 
-        virtual long spaceRequired() const override {
-            long tmp=4;     // for array base pointer
-            if(type=="int") {
-                tmp += 4*dimensions->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp=4;       // for array base pointer
+            long elementSize=1;
+            std::unordered_map<std::string,typeInfo>::iterator typeIT;
+            std::string bind_name = type;
+            while(bind_name!="")    {
+                typeIT = context->typeTable.find(bind_name);
+                bind_name=typeIT->second.type;
+                elementSize*=typeIT->second.size;
             }
-            else if(type=="char")   {
-                tmp += dimensions->spaceRequired();
-            }
-            else if(type=="float")  {
-                tmp +=4*dimensions->spaceRequired();
-            }
-            else    {       // for structs/typedefs
-                tmp += 0;   // change later
-            }
+            tmp += elementSize*dimensions->spaceRequired(context);
             return tmp;
         }
 
@@ -216,17 +217,18 @@ class DeclareArray : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override   {
             varInfo vf;
             context->vfPointer=&vf;
-            if(type=="int") {
-                vf.numBytes=4;
-                vf.type="int";
-            }
-            else if(type=="char")   {
-                vf.numBytes=1;
-                vf.type="char";
+            vf.type=type;
+            vf.numBytes=1;
+            std::unordered_map<std::string,typeInfo>::iterator typeIT;
+            std::string bind_name = type;
+            while(bind_name!="") {
+                typeIT = context->typeTable.find(bind_name);
+                bind_name = typeIT->second.type;
+                vf.numBytes*=typeIT->second.size;
             }
             vf.isPtr = 1;
             dimensions->generate(file, "t0", context);
-            vf.length = dimensions->spaceRequired();    // number of elements (removing 4 bytes used for base pointer) (ok maybe not)
+            vf.length = dimensions->spaceRequired(context);    // number of elements (removing 4 bytes used for base pointer) (ok maybe not)
             vf.blockSize.back() = vf.numBytes;
             for(long i=vf.blockSize.size()-2;i>=0;i--)  {                          // build block table
                 vf.blockSize.at(i) = vf.dimension.at(i+1) * vf.blockSize.at(i+1);
@@ -357,6 +359,7 @@ class DeclareTypeDef : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             typeInfo tmp;
             tmp.type = bind_type;
+            tmp.size = 1;
             tmp.ptr = ptr;
             context->typeTable.insert(std::pair<std::string,typeInfo>(id,tmp));
         }

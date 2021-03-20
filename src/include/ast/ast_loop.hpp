@@ -26,10 +26,10 @@ class WhileLoop : public Loop {
     public:
         WhileLoop(ProgramPtr _condition, ProgramPtr _action) : Loop(_condition, _action)    {}
 
-        virtual long spaceRequired() const override {
-            long tmp = getCondition()->spaceRequired();
+        virtual long spaceRequired(Context *context) const override {
+            long tmp = getCondition()->spaceRequired(context);
             if(getAction()!=nullptr)    {
-                tmp+=getAction()->spaceRequired();
+                tmp+=getAction()->spaceRequired(context);
             }
             return tmp;
         }
@@ -105,7 +105,7 @@ class ForLoop : public Loop  {      // for(dec; cond; asn) {...}
             context->isLoop=1;
             int Switchinit = context->isSwitch;
             context->isSwitch = 0;
-            long scopeSize = dec->spaceRequired();          // allocate new scope on stack for loop conditional variable
+            long scopeSize = dec->spaceRequired(context);          // allocate new scope on stack for loop conditional variable
             context->stack.lut.push_back(tmp);
             context->stack.slider = context->stack.size;
             context->stack.size += scopeSize;

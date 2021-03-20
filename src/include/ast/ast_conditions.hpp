@@ -23,13 +23,13 @@ class Condition : public Program {
             return b;
         }
 
-        virtual long spaceRequired() const override {
+        virtual long spaceRequired(Context *context) const override {
             long tmp=4;
             if(getA()!=nullptr) {
-                tmp+=getA()->spaceRequired();
+                tmp+=getA()->spaceRequired(context);
             }
             if(getB()!=nullptr) {
-                tmp+=getB()->spaceRequired();
+                tmp+=getB()->spaceRequired(context);
             }
             return tmp;
         }
