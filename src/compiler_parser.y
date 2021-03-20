@@ -34,7 +34,7 @@
 %type <string> NAME VAR_TYPE NUMBER HEX
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
-%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH TYPE_DECLARATION
+%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH TYPE_DECLARATION SIZEOF
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION ARR_INIT_VAL
 %type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT TERNARY VARIABLE_STORE
 %type <fnDefArgs> DEF_ARGS
@@ -223,6 +223,7 @@ FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number
        | HEX {$$ = new Number($1);}
        | FUNCTION { $$ = $1;}
+       | SIZEOF     { $$ = $1; }
        | B_LBRACKET MATH B_RBRACKET { $$ = $2; }
 
 VARIABLE : NAME               { $$ = new Variable($1); }    // variable
@@ -234,6 +235,9 @@ ARRAY_INDEX : B_LSQUARE MATH B_RSQUARE                 { $$ = new ArrayIndex($2,
 VARIABLE_STORE : NAME              { $$ = new VariableStore($1,0); }    // store to variable or array
                | NAME ARRAY_INDEX  { $$ = new ArrayStore($1,$2); }
                | OP_TIMES NAME     { $$ = new VariableStore($2,1);}
+
+SIZEOF : KW_SIZEOF B_LBRACKET NAME B_RBRACKET               { $$ = new FunctionSizeof($3,nullptr); }
+       | KW_SIZEOF B_LBRACKET NAME ARR_DEC_INDEX B_RBRACKET { $$ = new FunctionSizeof($3,$4); }
 
 
 

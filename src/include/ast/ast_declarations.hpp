@@ -365,4 +365,51 @@ class DeclareTypeDef : public Program {
         }
 };
 
+class FunctionSizeof : public Program {
+    private:
+        std::string id;
+        DeclareArrayElement *elements=nullptr;
+    public:
+        FunctionSizeof(std::string *_id, DeclareArrayElement *_elements) : id(*_id), elements(_elements)  {
+            delete _id;
+        }
+
+        ~FunctionSizeof()   {
+            delete elements;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"sizeof("<<id;
+            if(elements!=nullptr)   {
+                elements->print(dst);
+            }
+            dst<<")";
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::unordered_map<std::string,varInfo>::iterator it;   // sizeof variable
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {
+                it=context->stack.lut.at(i).find(id);
+                if(it!=context->stack.lut.at(i).end()) {
+                    long byteSize = it->second.numBytes * it->second.length;
+                    file<<"li "<<destReg<<", "<<byteSize<<std::endl;
+                    return;
+                }
+            }
+            std::unordered_map<std::string,typeInfo>::iterator typeIT;  // sizeof type
+            std::string bind_name=id;
+            long byteSize=1;
+            while(bind_name!="")    {
+                typeIT=context->typeTable.find(bind_name);
+                bind_name=typeIT->second.type;
+                byteSize*=typeIT->second.size;
+            }
+            if(elements!=nullptr)   {
+                byteSize*=elements->spaceRequired(context);    // get number of elements for type arrays ie int[10]
+            }            
+            file<<"li "<<destReg<<", "<<byteSize<<std::endl;
+        }
+};
+
 #endif
