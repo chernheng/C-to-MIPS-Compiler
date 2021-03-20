@@ -37,8 +37,9 @@ class FunctionDefArgs : public FunctionArgs {
     private:
         std::string type;
         std::string id;
+        int ptr = 0;
     public:
-        FunctionDefArgs(std::string *_type, std::string *_id, FunctionArgs *_next) : FunctionArgs(nullptr, _next), type(*_type), id(*_id)    {
+        FunctionDefArgs(std::string *_type, std::string *_id, FunctionArgs *_next, int _ptr) : FunctionArgs(nullptr, _next), type(*_type), id(*_id), ptr(_ptr) {
             delete _type;
             delete _id;
         }
@@ -67,6 +68,7 @@ class FunctionDefArgs : public FunctionArgs {
             long delta = context->stack.FP - (4*context->ArgCount);
             vf.offset=delta;
             vf.type=type;
+            vf.isPtr = ptr;
             if(type=="int") {
                 vf.length=1;
                 vf.numBytes=4;

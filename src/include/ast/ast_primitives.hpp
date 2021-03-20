@@ -183,13 +183,22 @@ class ArrayIndex : public Program { // handle index for array access
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            varInfo arrInfo = context->tempVarInfo;
             if(next!=nullptr)   {
                 context->indexCounter++;
                 next->generate(file, "$t9", context);
                 context->indexCounter--;
             }
             value->generate(file, "$t5", context);
-            file<<"li $t4, "<<context->vfPointer->blockSize.at(context->indexCounter)<<std::endl;   // load block size?
+            if (arrInfo.isPtr == 1){
+                if(arrInfo.type == "int"){
+                    file<<"li $t4, 4"<<std::endl;
+                }else if(arrInfo.type == "char"){
+                    file<<"li $t4, 1"<<std::endl;
+                }
+            }else {
+                file<<"li $t4, "<<context->vfPointer->blockSize.at(context->indexCounter)<<std::endl;   // load block size (problematic line)
+            }
             file<<"mult $t4, $t5"<<std::endl;
             file<<"mflo "<<std::string(destReg)<<std::endl;
             if(next!=nullptr)   {

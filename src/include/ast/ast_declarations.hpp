@@ -224,6 +224,7 @@ class DeclareArray : public Program {
                 vf.numBytes=1;
                 vf.type="char";
             }
+            vf.isPtr = 1;
             dimensions->generate(file, "t0", context);
             vf.length = dimensions->spaceRequired();    // number of elements (removing 4 bytes used for base pointer) (ok maybe not)
             vf.blockSize.back() = vf.numBytes;

@@ -93,6 +93,7 @@ class AddOperator : public Operator {
                 file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
                 context->stack.slider-=4;
                 file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                context->tempVarInfo = varLeft;
 
             } else if(varRight.isPtr==1 && varRight.numBytes > 1) {
                 file<<"li $t3, "<<varRight.numBytes<<std::endl;
@@ -133,6 +134,7 @@ class SubOperator : public Operator {
                 file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
                 context->stack.slider-=4;
                 file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                context->tempVarInfo = varLeft;
             } else{
                 file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
                 context->stack.slider-=4;
@@ -251,6 +253,8 @@ class DerefOperator : public Operator {
                 file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
             } else if(context->tempVarInfo.type=="char"){
                 file<<"lb "<<std::string(destReg)<<", 0($t1)"<<std::endl;
+            } else {
+                file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
             }
         }
 };

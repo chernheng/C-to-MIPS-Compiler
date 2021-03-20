@@ -100,8 +100,11 @@ FUNCTION : NAME B_LBRACKET B_RBRACKET             { $$ = new FunctionCall($1,nul
 CALL_ARGS : MATH                                  { $$ = new FunctionCallArgs($1,nullptr); }
           | MATH COMMA CALL_ARGS                  { $$ = new FunctionCallArgs($1,$3); }
 
-DEF_ARGS : VAR_TYPE NAME                     { $$ = new FunctionDefArgs($1,$2,nullptr); }
-         | VAR_TYPE NAME COMMA DEF_ARGS      { $$ = new FunctionDefArgs($1,$2,$4); }
+DEF_ARGS : VAR_TYPE NAME                     { $$ = new FunctionDefArgs($1,$2,nullptr,0); }
+         | VAR_TYPE OP_TIMES NAME            { $$ = new FunctionDefArgs($1,$3,nullptr,1); }
+         | VAR_TYPE OP_TIMES NAME COMMA DEF_ARGS       {$$ = new FunctionDefArgs($1,$3,$5,1);}
+     //     | VAR_TYPE NAME ARRAY_INDEX                    { $$ = new FunctionDefArgs($1,$2,nullptr,1); }
+         | VAR_TYPE NAME COMMA DEF_ARGS      { $$ = new FunctionDefArgs($1,$2,$4,0); }
 
 COMMAND_SEQ : COMMAND               { $$ = new Command($1,nullptr); }
             | COMMAND COMMAND_SEQ   { $$ = new Command($1,$2); }
