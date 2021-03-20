@@ -54,7 +54,10 @@ class Variable : public Program {
                     context->tempVarInfo = it->second;
                     if(i>0)    { //not global
                         long offset = context->stack.size - it->second.offset;
-                        if(it->second.type=="int")  {                
+                        if(context->tempVarInfo.isPtr==1) {
+                            file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                        }
+                        else if(it->second.type=="int")  {                
                             file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                         }
                         else if(it->second.type=="char")    {
@@ -85,16 +88,24 @@ class Variable : public Program {
 class VariableStore : public Program {  // store vale into variable
     private:
         std::string id;
+        int ptr =0;
     public:
-        VariableStore(std::string *_id) : id(*_id)  {
+        VariableStore(std::string *_id, int _ptr) : id(*_id), ptr(_ptr)  {
             delete _id;
         }
 
         std::string getID() const   {
             return id;
         }
+        
+        int getPtr() const{
+            return ptr;
+        }
 
         virtual void print(std::ostream &dst) const override    {
+            if (getPtr() == 1){
+                dst<<"*";
+            }
             dst<<id;
         }
 
@@ -107,11 +118,23 @@ class VariableStore : public Program {  // store vale into variable
                     context->tempVarInfo = it->second;
                     if(i>0)    { //not global (write to local variable)
                         long offset = context->stack.size - it->second.offset;
-                        if(it->second.type=="int")  {
-                            file<<"sw "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
-                        }
-                        else if(it->second.type=="char")    {
-                            file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                        if (context->tempVarInfo.isPtr==0){
+                            if(it->second.type=="int")  {
+                                file<<"sw "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                            }
+                            else if(it->second.type=="char")    {
+                                file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                            }
+                        } else if (context->tempVarInfo.isPtr==1){
+                            if(it->second.type=="int")  {
+                                file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                                file<<"sw "<<destReg<<", 0($t1)"<<std::endl;
+                            }
+                            else if(it->second.type=="char")    {
+                                file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                                file<<"sb "<<destReg<<", 0($t1)"<<std::endl;
+                            }
+
                         }
                     }
                     else    {   // insert code for storing to global variable reference

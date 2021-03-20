@@ -224,8 +224,9 @@ VARIABLE : NAME               { $$ = new Variable($1); }    // variable
 ARRAY_INDEX : B_LSQUARE MATH B_RSQUARE                 { $$ = new ArrayIndex($2,nullptr); }    // handle array index
             | B_LSQUARE MATH B_RSQUARE ARRAY_INDEX     { $$ = new ArrayIndex($2,$4); }
 
-VARIABLE_STORE : NAME              { $$ = new VariableStore($1); }    // store to variable or array
+VARIABLE_STORE : NAME              { $$ = new VariableStore($1,0); }    // store to variable or array
                | NAME ARRAY_INDEX  { $$ = new ArrayStore($1,$2); }
+               | OP_TIMES NAME     { $$ = new VariableStore($2,1);}
 
 
 

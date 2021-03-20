@@ -247,7 +247,11 @@ class DerefOperator : public Operator {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t1", context);
             context->tempVarInfo.isPtr = 0;
-            file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
+            if (context->tempVarInfo.type=="int"){
+                file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
+            } else if(context->tempVarInfo.type=="char"){
+                file<<"lb "<<std::string(destReg)<<", 0($t1)"<<std::endl;
+            }
         }
 };
 
