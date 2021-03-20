@@ -63,15 +63,18 @@ sizeof          { return KW_SIZEOF; }
 "\:"             { return COLON;}
 [;]             { return SEMI_COLON;}
 
+[ \t\r\n\f\v\b\a]+		{;}
+
 [0-9]+([.][0-9]*)?      { yylval.string= new std::string(yytext); return NUMBER; }
-[\{][0-9]+([,][0-9]+)*[\}]     { yylval.string= new std::string(yytext); return ARRAY_ELEMENTS;}
+0[xX][a-fA-F0-9]+       {yylval.string= new std::string(yytext); return HEX; }
 [a-zA-Z_]+[a-zA-Z0-9_]* { yylval.string= new std::string(yytext); return NAME; } /*A variable name can only have letters (both uppercase and lowercase letters),
                                                                                          digits and underscore, and  first letter should be either a letter or an underscore */
- 
-[ \t\r\n]+		{;}
+
 
 .               { fprintf(stderr, "Invalid token\n"); exit(1); }
 %%
+/*[0-9]+([,][0-9]+)*     { yylval.string= new std::string(yytext); return ARRAY_ELEMENTS;}*/
+
 
 void yyerror (char const *s)
 {
