@@ -70,6 +70,94 @@ class AssignmentOperator : public Operator {
         }
 };
 
+class AssignmentSumOperator : public Operator {
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "+=";
+        }
+    public:
+        AssignmentSumOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void print(std::ostream &dst) const override    {
+            getLeft()->print(dst);
+            dst<<"+=";
+            getRight()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getRight()->generate(file,"$t1",context);
+            getLeft()->generate(file, "$t0", context);
+            file<<"addu $t1, $t0, $t1"<<std::endl;
+            
+            if(getLeft()->getVarType(context)=="int")  {
+                file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            else if(getLeft()->getVarType(context)=="char")    {
+                file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            file<<"move "<<std::string(destReg)<<", $t1"<<std::endl;
+        }
+};
+
+class AssignmentDiffOperator : public Operator {
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "-=";
+        }
+    public:
+        AssignmentDiffOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void print(std::ostream &dst) const override    {
+            getLeft()->print(dst);
+            dst<<"-=";
+            getRight()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getRight()->generate(file,"$t1",context);
+            getLeft()->generate(file, "$t0", context);
+            file<<"subu $t1, $t0, $t1"<<std::endl;
+            
+            if(getLeft()->getVarType(context)=="int")  {
+                file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            else if(getLeft()->getVarType(context)=="char")    {
+                file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            file<<"move "<<std::string(destReg)<<", $t1"<<std::endl;
+        }
+};
+
+class AssignmentProductOperator : public Operator {
+    protected:
+        virtual const char *getOpcode() const override  {
+            return "*=";
+        }
+    public:
+        AssignmentProductOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)    {}
+
+        virtual void print(std::ostream &dst) const override    {
+            getLeft()->print(dst);
+            dst<<"*=";
+            getRight()->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            getRight()->generate(file,"$t1",context);
+            getLeft()->generate(file, "$t0", context);
+            file<<"mult $t1, $t0"<<std::endl;
+            file<<"mflo $t1"<<std::endl;
+            
+            if(getLeft()->getVarType(context)=="int")  {
+                file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            else if(getLeft()->getVarType(context)=="char")    {
+                file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            }
+            file<<"move "<<std::string(destReg)<<", $t1"<<std::endl;
+        }
+};
+
 class AddOperator : public Operator {
     protected:
         virtual const char *getOpcode() const override  {
@@ -220,6 +308,7 @@ class RefOperator : public Operator {
             dst<<"REF";
         }
 
+
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             long offset = getLeft()->getOffset(context);
             if (getLeft()->getVarType(context) == "int" ){
@@ -246,9 +335,19 @@ class DerefOperator : public Operator {
             dst<<"DEREF";
         }
 
+        virtual std::string getVarType(Context *context) const override {
+            return getLeft()->getVarType(context);
+        }
+
+        virtual long getOffset(Context *context) const override  { 
+            return getLeft()->getOffset(context);
+        }
+
+
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t1", context);
             context->tempVarInfo.isPtr = 0;
+            context->tempVarInfo.derefPtr = 1;
             if (context->tempVarInfo.type=="int"){
                 file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
             } else if(context->tempVarInfo.type=="char"){
@@ -417,13 +516,24 @@ class IncOperator : public Operator {   // i++
             }else {
                 file<<"addiu $t1, $t0, 1"<<std::endl;
             }
-            
-            if(getLeft()->getVarType(context)=="int")  {
-                file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+
+            if(context->tempVarInfo.derefPtr==1){
+                file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t1, 0($t0)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t1, 0($t0)"<<std::endl;
+                }
+            } else { 
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
             }
-            else if(getLeft()->getVarType(context)=="char")    {
-                file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-            }
+            getLeft()->generate(file, "$t0", context);
             file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
@@ -448,12 +558,23 @@ class DecOperator : public Operator {   // i--
             }else {
                 file<<"addiu $t1, $t0, -1"<<std::endl;
             }
-            if(getLeft()->getVarType(context)=="int")  {
-                file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            if(context->tempVarInfo.derefPtr==1){
+                file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t1, 0($t0)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t1, 0($t0)"<<std::endl;
+                }
+            } else { 
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
             }
-            else if(getLeft()->getVarType(context)=="char")    {
-                file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-            }
+            getLeft()->generate(file, "$t0", context);
             file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
@@ -478,11 +599,21 @@ class IncAfterOperator : public Operator {   // ++i
             }else {
                 file<<"addiu $t0, $t0, 1"<<std::endl;
             }
-            if(getLeft()->getVarType(context)=="int")  {
-                file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-            }
-            else if(getLeft()->getVarType(context)=="char")    {
-                file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            if(context->tempVarInfo.derefPtr==1){
+                file<<"lw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t0, 0($t1)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t0, 0($t1)"<<std::endl;
+                }
+            } else { 
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
             }
             file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
@@ -508,11 +639,21 @@ class DecAfterOperator : public Operator {   // --i
             }else {
                 file<<"addiu $t0, $t0, -1"<<std::endl;
             }
-            if(getLeft()->getVarType(context)=="int")  {
-                file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-            }
-            else if(getLeft()->getVarType(context)=="char")    {
-                file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+            if(context->tempVarInfo.derefPtr==1){
+                file<<"lw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t0, 0($t1)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t0, 0($t1)"<<std::endl;
+                }
+            } else { 
+                if(getLeft()->getVarType(context)=="int")  {
+                    file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
+                else if(getLeft()->getVarType(context)=="char")    {
+                    file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                }
             }
             file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }

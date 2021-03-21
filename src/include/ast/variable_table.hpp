@@ -17,6 +17,7 @@ struct varInfo {
     long length=0;  // number of elements
     int isFP=0;
     int isPtr=0;
+    int derefPtr=0;
     int isGlobal=0;
     long initValue=0;
     std::string type="";
