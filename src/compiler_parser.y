@@ -188,8 +188,8 @@ ASSIGNMENT : VARIABLE_STORE OP_EQUAL MATH         { $$ = new AssignmentOperator(
 OP_ASSIGNMENT : NEG OP_SUM_ASN MATH      { $$ = new AssignmentSumOperator($1,$3);}
               | NEG OP_DIFF_ASN MATH      { $$ = new AssignmentDiffOperator($1,$3);}
               | NEG OP_PRODUCT_ASN MATH      { $$ = new AssignmentProductOperator($1,$3);}
-              | NEG OP_DIVIDE_ASN MATH      { $$ = new AssignmentDiffOperator($1,$3);} //not implemented
-              | NEG OP_MOD_ASN MATH      { $$ = new AssignmentDiffOperator($1,$3);}//not implemented, cannot work with pointers
+              | NEG OP_DIVIDE_ASN MATH      { $$ = new AssignmentDivideOperator($1,$3);} //not implemented
+              | NEG OP_MOD_ASN MATH      { $$ = new AssignmentModOperator($1,$3);}//not implemented, cannot work with pointers
 
 TERNARY : CONDITION OP_QUESTION MATH COLON MATH {$$ = new TernaryBlock($1,$3,$5);}
         | B_LBRACKET TERNARY B_RBRACKET {$$ = $2;}
