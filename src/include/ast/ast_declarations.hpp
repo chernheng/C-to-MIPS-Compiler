@@ -89,6 +89,9 @@ class DeclareVariable : public Program {
                 if(typeIT->second.ptr > vf.isPtr)   {
                     vf.isPtr = typeIT->second.ptr;
                 }
+                if(typeIT->second.isUnsigned > vf.isUnsigned)   {
+                    vf.isUnsigned = typeIT->second.isUnsigned;
+                }
             }
             if(vf.isPtr==1) {   // set size to be 4 bytes if it is a pointer
                 vf.numBytes=4;
@@ -129,7 +132,6 @@ class DeclareVariable : public Program {
                     file<<"sb $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
                 }
             }
-            // context->stack.slider+=4;
             file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
             return;                        
         }
@@ -181,8 +183,9 @@ class DeclareArray : public Program {
         DeclareArrayElement *dimensions;
         ProgramPtr init = nullptr; //int x = 5;  (Array_Init class)
         int ptr=0;
+        int isUnsigned=0;
     public:
-        DeclareArray(std::string *_type, std::string *_id, DeclareArrayElement *_dimens, ProgramPtr _init) : type(*_type), id(*_id), dimensions(_dimens), init(_init) {
+        DeclareArray(std::string *_type, std::string *_id, DeclareArrayElement *_dimens, ProgramPtr _init, int _uns) : type(*_type), id(*_id), dimensions(_dimens), init(_init), isUnsigned(_uns) {
             delete _type;
             delete _id;
         }
@@ -228,6 +231,7 @@ class DeclareArray : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override   {
             varInfo vf;
             context->vfPointer=&vf;
+            vf.isUnsigned = isUnsigned;
             vf.type=type;
             vf.numBytes=1;
             std::unordered_map<std::string,typeInfo>::iterator typeIT;
@@ -238,6 +242,9 @@ class DeclareArray : public Program {
                 vf.numBytes*=typeIT->second.size;
                 if(typeIT->second.type!="") {
                     vf.type=typeIT->second.type;
+                }
+                if(typeIT->second.isUnsigned > vf.isUnsigned)   {
+                    vf.isUnsigned = typeIT->second.isUnsigned;
                 }
             }
             vf.isPtr = 1;
@@ -360,8 +367,9 @@ class DeclareTypeDef : public Program {
         std::string id;
         std::string bind_type;
         int ptr=0;
+        int isUnsigned=0;
     public:
-        DeclareTypeDef(std::string *_bn, std::string *_id, int _ptr) : id(*_id), bind_type(*_bn), ptr(_ptr) {
+        DeclareTypeDef(std::string *_bn, std::string *_id, int _ptr, int _uns) : id(*_id), bind_type(*_bn), ptr(_ptr), isUnsigned(_uns) {
             delete _id;
             delete _bn;
         }
@@ -375,6 +383,7 @@ class DeclareTypeDef : public Program {
             tmp.type = bind_type;
             tmp.size = 1;
             tmp.ptr = ptr;
+            tmp.isUnsigned = isUnsigned;
             context->typeTable.insert(std::pair<std::string,typeInfo>(id,tmp));
         }
 };

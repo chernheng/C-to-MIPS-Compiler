@@ -75,19 +75,21 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
            | FUNC_DECLARATION        { $$ = $1; }   // function declaration
            | TYPE_DECLARATION        { $$ = $1; }
 
-TYPE_DECLARATION : KW_TYPEDEF NAME NAME SEMI_COLON          { $$ = new DeclareTypeDef($2,$3,0); }
-                 | KW_TYPEDEF NAME OP_TIMES NAME SEMI_COLON { $$ = new DeclareTypeDef($2,$4,1); }
+TYPE_DECLARATION : KW_TYPEDEF NAME NAME SEMI_COLON               { $$ = new DeclareTypeDef($2,$3,0,0); } // typedef int t1;
+                 | KW_TYPEDEF NAME NAME NAME SEMI_COLON          { $$ = new DeclareTypeDef($3,$4,0,1); } // typedef unsigned char c1;
+                 | KW_TYPEDEF NAME OP_TIMES NAME SEMI_COLON      { $$ = new DeclareTypeDef($2,$4,1,0); } // typedef int *t1;
+                 | KW_TYPEDEF NAME NAME OP_TIMES NAME SEMI_COLON { $$ = new DeclareTypeDef($3,$5,1,1); } // typedef unsigned char *c1;
 
 VAR_DECLARATION : NAME NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0,0); }     // int x
-                | NAME NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($1,$2,$3,nullptr); }    // array
-                | NAME NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARR_INIT_VAL B_RCURLY SEMI_COLON {$$ = new DeclareArray($1,$2,$3,$6);}
+                | NAME NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($1,$2,$3,nullptr,0); }    // array
+                | NAME NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARR_INIT_VAL B_RCURLY SEMI_COLON {$$ = new DeclareArray($1,$2,$3,$6,0);}
                 | NAME NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0,0); }     //int x=10;
                 | NAME NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0,0); }    
                 | NAME OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1,0); } //int *x;
                 | NAME OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1,0); } //int *x = &f;
                 | NAME NAME NAME SEMI_COLON                    { $$ = new DeclareVariable($2,$3,0,1); }     // int x (unsigned)
-                | NAME NAME NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($2,$3,$4,nullptr); }    // array (unsigned)
-                | NAME NAME NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARR_INIT_VAL B_RCURLY SEMI_COLON {$$ = new DeclareArray($2,$3,$4,$7);} // unsigned
+                | NAME NAME NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($2,$3,$4,nullptr,1); }    // array (unsigned)
+                | NAME NAME NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARR_INIT_VAL B_RCURLY SEMI_COLON {$$ = new DeclareArray($2,$3,$4,$7,1);} // unsigned
                 | NAME NAME NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($2,$3,$5,0,1); }     //int x=10; (unsigned)
                 | NAME NAME NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($2,$3,$5,0,1); }    // unsigned
                 | NAME NAME OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($2,$4,1,1); } //int *x; (unsigned)
@@ -100,10 +102,14 @@ ARR_INIT_VAL : NUMBER                                   {$$ = new Array_Init($1,
              | NUMBER COMMA ARR_INIT_VAL                {$$ = new Array_Init($1,$3);}
 
 FUNC_DECLARATION : NAME NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new DeclareFunction($1,$2); }
+                 | NAME NAME NAME B_LBRACKET B_RBRACKET SEMI_COLON    { $$ = new DeclareFunction($2,$3); }    // unsigned char f1();
                  | NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SEMI_COLON      { $$ = new DeclareFunction($1,$2); }
+                 | NAME NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SEMI_COLON      { $$ = new DeclareFunction($2,$3); }   // unsigned char f1([args]);
 
 FUNCTION_DEF : NAME NAME B_LBRACKET B_RBRACKET SCOPE               { $$ = new FunctionDef($1,$2,nullptr,$5); }
-             | NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($1,$2,$4,$6); }   // definition  (no arguments)
+             | NAME NAME NAME B_LBRACKET B_RBRACKET SCOPE          { $$ = new FunctionDef($2,$3,nullptr,$6); }     // unsigned return type
+             | NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($1,$2,$4,$6); }   // definition  (with arguments)
+             | NAME NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($2,$3,$5,$7); }     // unsigned return type
 
 FUNCTION : NAME B_LBRACKET B_RBRACKET             { $$ = new FunctionCall($1,nullptr); }   //call function (without storing return result) (no arguments)
          | NAME B_LBRACKET CALL_ARGS B_RBRACKET   { $$ = new FunctionCall($1,$3); }
