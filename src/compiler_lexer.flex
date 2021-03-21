@@ -59,6 +59,11 @@ typedef         { return KW_TYPEDEF; }
 "++"            { return OP_INC;}
 "--"            { return OP_DEC;}
 "\?"            { return OP_QUESTION;}
+"+="            { return OP_SUM_ASN;}
+"-="            { return OP_DIFF_ASN;}
+"*="            { return OP_PRODUCT_ASN;}
+"/="            { return OP_DIVIDE_ASN;}
+"%="            { return OP_MOD_ASN;}
 
 ","             { return COMMA;}
 "\:"             { return COLON;}

@@ -28,15 +28,15 @@
 %token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE KW_ELIF KW_SWITCH KW_CASE KW_DEFAULT KW_SIZEOF KW_TYPEDEF
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
-%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC OP_QUESTION
-%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON HEX
+%token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC OP_QUESTION OP_SUM_ASN OP_DIFF_ASN
+%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON HEX OP_PRODUCT_ASN OP_DIVIDE_ASN OP_MOD_ASN
 
 %type <string> NAME VAR_TYPE NUMBER HEX
 
 %type <programPtr> MAIN_SEQ COMMAND_SEQ COMMAND
-%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH TYPE_DECLARATION SIZEOF
-%type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION ARR_INIT_VAL
-%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK INCREMENT TERNARY VARIABLE_STORE
+%type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH TYPE_DECLARATION SIZEOF OP_ASSIGNMENT
+%type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION ARR_INIT_VAL 
+%type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK TERNARY VARIABLE_STORE
 %type <fnDefArgs> DEF_ARGS
 %type <fnCallArgs> CALL_ARGS
 %type <caseptr> CASE
@@ -169,13 +169,20 @@ RETN : KW_RETURN                  { $$ = new ReturnStatement(); }
      | KW_RETURN MATH             { $$ = new ReturnStatement($2); }
 
 STATEMENT : ASSIGNMENT SEMI_COLON   { $$ = $1; }
-          | INCREMENT SEMI_COLON    { $$ = $1; }
+          | NEG SEMI_COLON    { $$ = $1; }
+          | OP_ASSIGNMENT SEMI_COLON {$$ = $1; }
 
 STATE     : ASSIGNMENT   { $$ = $1; }
-          | INCREMENT    { $$ = $1; }
+          | NEG    { $$ = $1; }
 
 ASSIGNMENT : VARIABLE_STORE OP_EQUAL MATH         { $$ = new AssignmentOperator($1,$3); }     // need to add parser support for math 
            | VARIABLE_STORE OP_EQUAL TERNARY         { $$ = new AssignmentOperator($1,$3); } 
+
+OP_ASSIGNMENT : NEG OP_SUM_ASN MATH      { $$ = new AssignmentSumOperator($1,$3);}
+              | NEG OP_DIFF_ASN MATH      { $$ = new AssignmentDiffOperator($1,$3);}
+              | NEG OP_PRODUCT_ASN MATH      { $$ = new AssignmentProductOperator($1,$3);}
+              | NEG OP_DIVIDE_ASN MATH      { $$ = new AssignmentDiffOperator($1,$3);} //not implemented
+              | NEG OP_MOD_ASN MATH      { $$ = new AssignmentDiffOperator($1,$3);}//not implemented, cannot work with pointers
 
 TERNARY : CONDITION OP_QUESTION MATH COLON MATH {$$ = new TernaryBlock($1,$3,$5);}
         | B_LBRACKET TERNARY B_RBRACKET {$$ = $2;}
@@ -206,18 +213,16 @@ TERM : NEG      { $$ = $1; }
      | TERM OP_DIVIDE NEG         { $$ = new DivOperator($1, $3); }
      | TERM OP_MODULO NEG         { $$ = new ModuloOperator($1, $3);}
 
-NEG : INCREMENT        { $$ = $1; }
+NEG : FACTOR       { $$ = $1; }
     | OP_NOT NEG {$$ = new BitNOTOperator($2);}
     | COND_NOT NEG {$$ = new LogicalNOT($2);}
     | OP_MINUS NEG %prec MINUS {$$ = new NegOperator($2);}
     | OP_REF NEG %prec REF {$$ = new RefOperator($2);}
     | OP_TIMES NEG %prec DEREF {$$ = new DerefOperator($2);}
-
-INCREMENT : FACTOR   { $$ = $1; }
-          | INCREMENT OP_INC {$$ = new IncOperator($1);}
-          | INCREMENT OP_DEC {$$ = new DecOperator($1);}
-          | OP_INC INCREMENT {$$ = new IncAfterOperator($2);}
-          | OP_DEC INCREMENT {$$ = new DecAfterOperator($2);}
+    | NEG OP_INC {$$ = new IncOperator($1);}
+    | NEG OP_DEC {$$ = new DecOperator($1);}
+    | OP_INC NEG {$$ = new IncAfterOperator($2);}
+    | OP_DEC NEG {$$ = new DecAfterOperator($2);}
 
 FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number
