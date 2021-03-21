@@ -11,7 +11,7 @@ Types (int)|(char)|(float)|(double)|(void)
 
 %%
   // {Types}         { yylval.string= new std::string(yytext); return VAR_TYPE;}
-unsigned        { return KW_UNSIGNED;}
+  // unsigned        { return KW_UNSIGNED;}
 "else if"       { return KW_ELIF;}
 if              { return KW_IF;} 
 else            { return KW_ELSE;}

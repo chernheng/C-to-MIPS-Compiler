@@ -10,13 +10,14 @@ class DeclareVariable : public Program {
         std::string id;
         ProgramPtr init=nullptr; //int x = 5;
         int ptr=0;
+        int isUnsigned=0;
     public:
-        DeclareVariable(std::string *_type, std::string *_id, ProgramPtr _init, int _ptr) : type(*_type), id(*_id), init(_init), ptr(_ptr)  {
+        DeclareVariable(std::string *_type, std::string *_id, ProgramPtr _init, int _ptr, int _uns) : type(*_type), id(*_id), init(_init), ptr(_ptr), isUnsigned(_uns)  {
             delete _type;
             delete _id;
         }
 
-        DeclareVariable(std::string *_type, std::string *_id, int _ptr) : type(*_type),id(*_id), ptr(_ptr)   {
+        DeclareVariable(std::string *_type, std::string *_id, int _ptr, int _uns) : type(*_type),id(*_id), ptr(_ptr), isUnsigned(_uns)   {
             delete _type;
             delete _id;
         }
@@ -55,6 +56,9 @@ class DeclareVariable : public Program {
                 bind_name=typeIT->second.type;
                 tmp*=typeIT->second.size;
             }
+            if(ptr==1)  {
+                tmp=4;  // pointer uses 4 bytes
+            }
             if(init!=nullptr)   {
                 tmp += init->spaceRequired(context);
             }
@@ -68,6 +72,7 @@ class DeclareVariable : public Program {
             vf.offset=offset;
             vf.length=1;
             vf.isPtr =getPtr();
+            vf.isUnsigned = isUnsigned;
             vf.type = type;
             vf.numBytes=1;
             int stackInc=1;

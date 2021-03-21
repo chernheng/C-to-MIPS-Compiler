@@ -78,13 +78,20 @@ DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
 TYPE_DECLARATION : KW_TYPEDEF NAME NAME SEMI_COLON          { $$ = new DeclareTypeDef($2,$3,0); }
                  | KW_TYPEDEF NAME OP_TIMES NAME SEMI_COLON { $$ = new DeclareTypeDef($2,$4,1); }
 
-VAR_DECLARATION : NAME NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0); }     // int x
+VAR_DECLARATION : NAME NAME SEMI_COLON                    { $$ = new DeclareVariable($1,$2,0,0); }     // int x
                 | NAME NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($1,$2,$3,nullptr); }    // array
                 | NAME NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARR_INIT_VAL B_RCURLY SEMI_COLON {$$ = new DeclareArray($1,$2,$3,$6);}
-                | NAME NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }     //int x=10;
-                | NAME NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0); }    
-                | NAME OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1); } //int *x;
-                | NAME OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1); } //int *x = &f;
+                | NAME NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0,0); }     //int x=10;
+                | NAME NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($1,$2,$4,0,0); }    
+                | NAME OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($1,$3,1,0); } //int *x;
+                | NAME OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($1,$3,$5,1,0); } //int *x = &f;
+                | NAME NAME NAME SEMI_COLON                    { $$ = new DeclareVariable($2,$3,0,1); }     // int x (unsigned)
+                | NAME NAME NAME ARR_DEC_INDEX SEMI_COLON      { $$ = new DeclareArray($2,$3,$4,nullptr); }    // array (unsigned)
+                | NAME NAME NAME ARR_DEC_INDEX OP_EQUAL B_LCURLY ARR_INIT_VAL B_RCURLY SEMI_COLON {$$ = new DeclareArray($2,$3,$4,$7);} // unsigned
+                | NAME NAME NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($2,$3,$5,0,1); }     //int x=10; (unsigned)
+                | NAME NAME NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($2,$3,$5,0,1); }    // unsigned
+                | NAME NAME OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($2,$4,1,1); } //int *x; (unsigned)
+                | NAME NAME OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($2,$4,$6,1,1); } //int *x = &f; (unsigned)
 
 ARR_DEC_INDEX : B_LSQUARE NUMBER B_RSQUARE                       { $$ = new DeclareArrayElement($2,nullptr); }
               | B_LSQUARE NUMBER B_RSQUARE ARR_DEC_INDEX         { $$ = new DeclareArrayElement($2,$4); }

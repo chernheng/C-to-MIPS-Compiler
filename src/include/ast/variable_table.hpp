@@ -36,6 +36,7 @@ struct typeInfo {
     std::string type="";
     long size=0;
     int ptr=0;
+    int isUnsigned=0;
 };
 
 struct VarLUT {
