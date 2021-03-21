@@ -78,9 +78,15 @@ class DeclareVariable : public Program {
                 bindType = typeIT->second.type;
                 vf.numBytes*=typeIT->second.size;
                 stackInc*=typeIT->second.size;
+                if(typeIT->second.type!="") {
+                    vf.type=typeIT->second.type;
+                }
                 if(typeIT->second.ptr > vf.isPtr)   {
                     vf.isPtr = typeIT->second.ptr;
                 }
+            }
+            if(vf.isPtr==1) {   // set size to be 4 bytes if it is a pointer
+                vf.numBytes=4;
             }
             if (size == 1) {
                 vf.isGlobal = 1;
@@ -225,6 +231,9 @@ class DeclareArray : public Program {
                 typeIT = context->typeTable.find(bind_name);
                 bind_name = typeIT->second.type;
                 vf.numBytes*=typeIT->second.size;
+                if(typeIT->second.type!="") {
+                    vf.type=typeIT->second.type;
+                }
             }
             vf.isPtr = 1;
             dimensions->generate(file, "t0", context);
