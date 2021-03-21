@@ -102,14 +102,22 @@ ARR_INIT_VAL : NUMBER                                   {$$ = new Array_Init($1,
              | NUMBER COMMA ARR_INIT_VAL                {$$ = new Array_Init($1,$3);}
 
 FUNC_DECLARATION : NAME NAME B_LBRACKET B_RBRACKET SEMI_COLON   { $$ = new DeclareFunction($1,$2); }
+                 | NAME OP_TIMES NAME B_LBRACKET B_RBRACKET SEMI_COLON     { $$ = new DeclareFunction($1,$3); }
                  | NAME NAME NAME B_LBRACKET B_RBRACKET SEMI_COLON    { $$ = new DeclareFunction($2,$3); }    // unsigned char f1();
+                 | NAME NAME OP_TIMES NAME B_LBRACKET B_RBRACKET SEMI_COLON     { $$ = new DeclareFunction($2,$4); }
                  | NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SEMI_COLON      { $$ = new DeclareFunction($1,$2); }
+                 | NAME OP_TIMES NAME B_LBRACKET DEF_ARGS B_RBRACKET SEMI_COLON { $$ = new DeclareFunction($1,$3); }
                  | NAME NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SEMI_COLON      { $$ = new DeclareFunction($2,$3); }   // unsigned char f1([args]);
+                 | NAME NAME OP_TIMES NAME B_LBRACKET DEF_ARGS B_RBRACKET SEMI_COLON { $$ = new DeclareFunction($2,$4); }
 
-FUNCTION_DEF : NAME NAME B_LBRACKET B_RBRACKET SCOPE               { $$ = new FunctionDef($1,$2,nullptr,$5); }
-             | NAME NAME NAME B_LBRACKET B_RBRACKET SCOPE          { $$ = new FunctionDef($2,$3,nullptr,$6); }     // unsigned return type
-             | NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($1,$2,$4,$6); }   // definition  (with arguments)
+FUNCTION_DEF : NAME NAME B_LBRACKET B_RBRACKET SCOPE                  { $$ = new FunctionDef($1,$2,nullptr,$5); }
+             | NAME OP_TIMES NAME B_LBRACKET B_RBRACKET SCOPE         { $$ = new FunctionDef($1,$3,nullptr,$6); }     // pointer return type
+             | NAME NAME NAME B_LBRACKET B_RBRACKET SCOPE             { $$ = new FunctionDef($2,$3,nullptr,$6); }     // unsigned return type
+             | NAME NAME OP_TIMES NAME B_LBRACKET B_RBRACKET SCOPE    { $$ = new FunctionDef($2,$4,nullptr,$7); }  // unsigned pointer return type
+             | NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE         { $$ = new FunctionDef($1,$2,$4,$6); }   // definition  (with arguments)
+             | NAME OP_TIMES NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE     { $$ = new FunctionDef($1,$3,$5,$7); }  // definition (wuth args) return pointer
              | NAME NAME NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE      { $$ = new FunctionDef($2,$3,$5,$7); }     // unsigned return type
+             | NAME NAME OP_TIMES NAME B_LBRACKET DEF_ARGS B_RBRACKET SCOPE     { $$ = new FunctionDef($2,$4,$6,$8); }  // unsigned pointer return type
 
 FUNCTION : NAME B_LBRACKET B_RBRACKET             { $$ = new FunctionCall($1,nullptr); }   //call function (without storing return result) (no arguments)
          | NAME B_LBRACKET CALL_ARGS B_RBRACKET   { $$ = new FunctionCall($1,$3); }
