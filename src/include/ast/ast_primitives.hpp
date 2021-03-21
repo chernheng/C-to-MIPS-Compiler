@@ -58,7 +58,12 @@ class Variable : public Program {
                             file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                         }
                         else if(it->second.numBytes==1)    {
-                            file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                            if(it->second.isUnsigned==1)    {
+                                file<<"lbu "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                            }
+                            else{
+                                file<<"lb "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                            }                            
                         }
                         else    {
                             file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
@@ -236,7 +241,12 @@ class Array : public Program {  // read value in array
                         file<<"lw $t5, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;    // load array base address into $t5
                         file<<"addu $t9, $t5, $t8"<<std::endl;      // add element offset to base address to get element address
                         if(it->second.numBytes==1)    {
-                            file<<"lb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                            if(it->second.isUnsigned==1)    {
+                                file<<"lbu "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                            }
+                            else    {
+                                file<<"lb "<<std::string(destReg)<<", 0($t9)"<<std::endl;
+                            }                            
                         }
                         else    {
                             file<<"lw "<<std::string(destReg)<<", 0($t9)"<<std::endl;   

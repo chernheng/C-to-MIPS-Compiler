@@ -19,6 +19,7 @@ struct varInfo {
     int isPtr=0;
     int derefPtr=0;
     int isGlobal=0;
+    int isUnsigned=0;
     long initValue=0;
     std::string type="";
     std::vector<long> dimension;

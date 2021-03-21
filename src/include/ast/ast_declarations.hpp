@@ -114,7 +114,7 @@ class DeclareVariable : public Program {
                 if (size != 1){
                     init->generate(file, "$t7", context);
                 }
-                if (getPtr()==1){
+                if (vf.isPtr==1){
                     file<<"sw $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
                 }
                 else if(stackInc==4) {
