@@ -449,11 +449,6 @@ class FunctionSizeof : public Program {
                 }
                 byteSize*=typeIT->second.size;
             }
-            // std::unordered_map<std::string,structInfo>::iterator sIT;
-            // sIT = context->structTable.find(type);
-            // if(sIT!=context->structTable.end()) {
-
-            // }
             if(elements!=nullptr)   {
                 byteSize*=elements->spaceRequired(context);    // get number of elements for type arrays ie int[10]
             }            
