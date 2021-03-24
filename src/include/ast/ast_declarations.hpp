@@ -93,6 +93,23 @@ class DeclareVariable : public Program {
                     vf.isUnsigned = typeIT->second.isUnsigned;
                 }
             }
+            // insert declaration of variable of custom struct type
+            std::unordered_map<std::string,structInfo>::iterator sIT;
+            sIT = context->structTable.find(vf.type);
+            if(sIT!=context->structTable.end() && vf.isPtr==0) {   // check if type is a struct and variable is not a pointer
+                if(size>1)  {   // local struct instance
+                    context->stack.slider+=vf.numBytes+4;
+                    vf.isPtr=1;
+                    vf.offset = context->stack.slider;
+                    file<<"addiu $t1, $sp, "<<(context->stack.size - context->stack.slider + 4)<<std::endl; // calculate address of 1st element
+                    file<<"sw $t1, "<<(context->stack.size - context->stack.slider)<<"($sp)"<<std::endl;    // store pointer to stack
+                    context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
+                    return;
+                }
+                else    {   // global struct instance
+                    return;
+                }
+            }
             if(vf.isPtr==1) {   // set size to be 4 bytes if it is a pointer
                 vf.numBytes=4;
             }
@@ -422,16 +439,157 @@ class FunctionSizeof : public Program {
             }
             std::unordered_map<std::string,typeInfo>::iterator typeIT;  // sizeof type
             std::string bind_name=id;
+            std::string type=id;
             long byteSize=1;
             while(bind_name!="")    {
                 typeIT=context->typeTable.find(bind_name);
                 bind_name=typeIT->second.type;
+                if(typeIT->second.type!="") {
+                    type=typeIT->second.type;
+                }
                 byteSize*=typeIT->second.size;
             }
+            // std::unordered_map<std::string,structInfo>::iterator sIT;
+            // sIT = context->structTable.find(type);
+            // if(sIT!=context->structTable.end()) {
+
+            // }
             if(elements!=nullptr)   {
                 byteSize*=elements->spaceRequired(context);    // get number of elements for type arrays ie int[10]
             }            
             file<<"li "<<destReg<<", "<<byteSize<<std::endl;
+        }
+};
+
+class DeclareStructElement : public Program {
+    private:
+        std::string type;
+        std::string id;
+        int ptr=0;
+        int isUnsigned=0;
+        ProgramPtr next=nullptr;
+    public:
+        DeclareStructElement(std::string *_type, std::string *_id, int _ptr, int _uns, ProgramPtr _next) : type(*_type), id(*_id), ptr(_ptr), isUnsigned(_uns), next(_next)   {
+            delete _type;
+            delete _id;
+        }
+
+        ~DeclareStructElement() {
+            delete next;
+        }
+
+        virtual long spaceRequired(Context *context) const override {
+            long tmp=1;
+            std::unordered_map<std::string,typeInfo>::iterator typeIT;
+            std::string bind_name = type;
+            while(bind_name!="")    {
+                typeIT = context->typeTable.find(bind_name);
+                bind_name=typeIT->second.type;
+                tmp*=typeIT->second.size;
+            }
+            if(ptr==1)  {
+                tmp=4;  // pointer uses 4 bytes
+            }
+            if(next!=nullptr)   {
+                tmp += next->spaceRequired(context);
+            }
+            return tmp;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<type<<" "<<id;
+            dst<<";"<<std::endl;
+            if(next!=nullptr)   {
+                next->print(dst);
+            }
+        }
+        
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            context->stPointer->elementCount++;
+            varInfo vi;
+            vi.type = type;
+            // vi.offset = context->stPointer->size;
+            vi.numBytes = 1;
+            vi.length = 1;
+            vi.isPtr = ptr;
+            vi.isUnsigned = isUnsigned;
+            std::unordered_map<std::string,typeInfo>::iterator typeIT;
+            std::string bindType = type;
+            while(bindType!="") {
+                typeIT = context->typeTable.find(bindType);
+                bindType = typeIT->second.type;
+                vi.numBytes*=typeIT->second.size;
+                if(typeIT->second.type!="") {
+                    vi.type=typeIT->second.type;
+                }
+                if(typeIT->second.ptr > vi.isPtr)   {
+                    vi.isPtr = typeIT->second.ptr;
+                }
+                if(typeIT->second.isUnsigned > vi.isUnsigned)   {
+                    vi.isUnsigned = typeIT->second.isUnsigned;
+                }
+            }
+            long size=1;
+            if(vi.isPtr==1) {
+                size=4;
+            }
+            else    {
+                size = vi.numBytes * vi.length;
+            }
+            if(vi.numBytes>1)    {   // ensure offset is word aligned if element is larger than 1 byte
+                if(context->stPointer->size%4>0)    {
+                    context->stPointer->size += 4 - (context->stPointer->size%4);
+                }
+            }
+            vi.offset = context->stPointer->size;
+            context->stPointer->size+=size;
+            context->stPointer->structElements.insert(std::pair<std::string,varInfo>(id,vi));
+            if(next!=nullptr)   {
+                next->generate(file, destReg, context);
+            }
+        }
+};
+
+class DeclareStruct : public Program {
+    private:
+        std::string id;
+        ProgramPtr elements=nullptr;
+    public:
+        DeclareStruct(std::string *_id, ProgramPtr _elm) : id(*_id), elements(_elm) {
+            delete _id;
+        }
+
+        ~DeclareStruct()    {
+            delete elements;
+        }
+
+        virtual long spaceRequired(Context *context) const override {
+            if(elements!=nullptr)   {
+                return elements->spaceRequired(context);
+            }
+            else    {
+                return 0;
+            }
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<"struct"<<id<<" { ";
+            if(elements!=nullptr)   {
+                elements->print(dst);
+            }
+            dst<<"};"<<std::endl;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {            
+            if(elements!=nullptr)   {   // if struct has no elements, no need to create it
+                structInfo si;
+                structInfo *initSIP = context->stPointer;
+                context->stPointer=&si;
+                elements->generate(file, destReg, context);
+                context->structTable.insert(std::pair<std::string,structInfo>(id,si));
+                context->typeTable.insert(std::pair<std::string,typeInfo>(id,{"",si.size,0,0}));
+                context->stPointer = initSIP;
+            }            
         }
 };
 

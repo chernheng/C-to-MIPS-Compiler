@@ -17,6 +17,7 @@ struct varInfo {
     long length=0;  // number of elements
     int isFP=0;
     int isPtr=0;
+    int isStruct=0;
     int derefPtr=0;
     int isGlobal=0;
     int isUnsigned=0;
@@ -39,6 +40,12 @@ struct typeInfo {
     int isUnsigned=0;
 };
 
+struct structInfo {
+    long elementCount=0;
+    long size=0;
+    std::unordered_map<std::string,varInfo> structElements;
+};
+
 struct VarLUT {
     long size=0;
     long slider=0;
@@ -51,6 +58,7 @@ struct Context {
     std::unordered_map<std::string,functionInfo> ftable;
     std::unordered_map<std::string,functionInfo>::iterator ftEntry;
     std::unordered_map<std::string,typeInfo> typeTable;
+    std::unordered_map<std::string,structInfo> structTable;
     std::string LoopStartPoint="";
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";
@@ -58,6 +66,7 @@ struct Context {
     std::string numVal="";
     varInfo tempVarInfo;
     varInfo *vfPointer=nullptr;
+    structInfo *stPointer=nullptr;
     std::list<std::string> Case_label;
     int isFunc=0;
     int isLoop=0;

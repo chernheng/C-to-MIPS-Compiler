@@ -25,6 +25,7 @@ case            { return KW_CASE;}
 default         { return KW_DEFAULT;}
 sizeof          { return KW_SIZEOF; }
 typedef         { return KW_TYPEDEF; }
+struct          { return KW_STRUCT; }
 
 
 "{"             { return B_LCURLY;}
@@ -66,6 +67,7 @@ typedef         { return KW_TYPEDEF; }
 "%="            { return OP_MOD_ASN;}
 
 ","             { return COMMA;}
+"."             { return DOT;}
 "\:"             { return COLON;}
 [;]             { return SEMI_COLON;}
 

@@ -25,11 +25,11 @@
   std::string *string;
 }
 
-%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE KW_ELIF KW_SWITCH KW_CASE KW_DEFAULT KW_SIZEOF KW_TYPEDEF
+%token KW_UNSIGNED KW_WHILE KW_FOR KW_IF KW_ELSE KW_RETURN KW_BREAK KW_CONTINUE KW_ELIF KW_SWITCH KW_CASE KW_DEFAULT KW_SIZEOF KW_TYPEDEF KW_STRUCT
 %token B_LCURLY B_RCURLY B_LSQUARE B_RSQUARE B_LBRACKET B_RBRACKET
 %token COND_LTEQ COND_GREQ COND_EQ COND_NEQ COND_LT COND_GR COND_AND COND_OR
 %token OP_EQUAL OP_TIMES OP_PLUS OP_XOR OP_MINUS OP_DIVIDE OP_MODULO OP_REF OP_OR OP_NOT OP_LSHIFT OP_RSHIFT OP_INC OP_DEC OP_QUESTION OP_SUM_ASN OP_DIFF_ASN
-%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON HEX OP_PRODUCT_ASN OP_DIVIDE_ASN OP_MOD_ASN
+%token SEMI_COLON NAME NUMBER VAR_TYPE COMMA COLON HEX OP_PRODUCT_ASN OP_DIVIDE_ASN OP_MOD_ASN DOT
 
 %type <string> NAME VAR_TYPE NUMBER HEX
 
@@ -37,6 +37,7 @@
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH TYPE_DECLARATION SIZEOF OP_ASSIGNMENT
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION ARR_INIT_VAL 
 %type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK TERNARY VARIABLE_STORE
+%type <programPtr> STRUCT_DECLARATION STRUCT_DEC_ELEMENT STRUCT_ELEMENT
 %type <fnDefArgs> DEF_ARGS
 %type <fnCallArgs> CALL_ARGS
 %type <caseptr> CASE
@@ -71,9 +72,21 @@ MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }    //int x
          | DECLARATION MAIN_SEQ     { $$ = new Command($1,$2); }         //multiple lines
          | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
 
+STRUCT_DECLARATION : KW_STRUCT NAME B_LCURLY STRUCT_DEC_ELEMENT B_RCURLY SEMI_COLON  { $$ = new DeclareStruct($2,$4); }
+
+STRUCT_DEC_ELEMENT : NAME NAME SEMI_COLON                                  { $$ = new DeclareStructElement($1,$2,0,0,nullptr); }
+                   | NAME NAME SEMI_COLON STRUCT_DEC_ELEMENT               { $$ = new DeclareStructElement($1,$2,0,0,$4); }
+                   | NAME NAME NAME SEMI_COLON                             { $$ = new DeclareStructElement($2,$3,0,1,nullptr); }
+                   | NAME NAME NAME SEMI_COLON STRUCT_DEC_ELEMENT          { $$ = new DeclareStructElement($2,$3,0,1,$5); }
+                   | NAME OP_TIMES NAME SEMI_COLON                         { $$ = new DeclareStructElement($1,$3,1,0,nullptr); }
+                   | NAME OP_TIMES NAME SEMI_COLON STRUCT_DEC_ELEMENT      { $$ = new DeclareStructElement($1,$3,1,0,$5); }
+                   | NAME NAME OP_TIMES NAME SEMI_COLON                    { $$ = new DeclareStructElement($2,$4,1,1,nullptr); }
+                   | NAME NAME OP_TIMES NAME SEMI_COLON STRUCT_DEC_ELEMENT { $$ = new DeclareStructElement($2,$4,1,1,$6); }
+
 DECLARATION : VAR_DECLARATION        { $$ = $1; }    // variable declaration
            | FUNC_DECLARATION        { $$ = $1; }   // function declaration
-           | TYPE_DECLARATION        { $$ = $1; }
+           | TYPE_DECLARATION        { $$ = $1; }   // typdef declaration
+           | STRUCT_DECLARATION      { $$ = $1; }   // struct declaration
 
 TYPE_DECLARATION : KW_TYPEDEF NAME NAME SEMI_COLON               { $$ = new DeclareTypeDef($2,$3,0,0); } // typedef int t1;
                  | KW_TYPEDEF NAME NAME NAME SEMI_COLON          { $$ = new DeclareTypeDef($3,$4,0,1); } // typedef unsigned char c1;
@@ -94,6 +107,7 @@ VAR_DECLARATION : NAME NAME SEMI_COLON                    { $$ = new DeclareVari
                 | NAME NAME NAME OP_EQUAL TERNARY SEMI_COLON      { $$ = new DeclareVariable($2,$3,$5,0,1); }    // unsigned
                 | NAME NAME OP_TIMES NAME SEMI_COLON           { $$ = new DeclareVariable($2,$4,1,1); } //int *x; (unsigned)
                 | NAME NAME OP_TIMES NAME OP_EQUAL MATH SEMI_COLON      { $$ = new DeclareVariable($2,$4,$6,1,1); } //int *x = &f; (unsigned)
+                | KW_STRUCT NAME NAME SEMI_COLON       { $$ = new DeclareVariable($2,$3,nullptr,0,0); }
 
 ARR_DEC_INDEX : B_LSQUARE NUMBER B_RSQUARE                       { $$ = new DeclareArrayElement($2,nullptr); }
               | B_LSQUARE NUMBER B_RSQUARE ARR_DEC_INDEX         { $$ = new DeclareArrayElement($2,$4); }
