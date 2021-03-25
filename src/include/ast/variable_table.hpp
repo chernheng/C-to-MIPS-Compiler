@@ -22,6 +22,8 @@ struct varInfo {
     int isGlobal=0;
     int isUnsigned=0;
     long initValue=0;
+    std::string FP_label;
+    std::string FP_value;
     std::string type="";
     std::vector<long> dimension;
     std::vector<long> blockSize;
@@ -38,6 +40,7 @@ struct typeInfo {
     long size=0;
     int ptr=0;
     int isUnsigned=0;
+    int isFP = 0;
 };
 
 struct structInfo {
@@ -59,6 +62,7 @@ struct Context {
     std::unordered_map<std::string,functionInfo>::iterator ftEntry;
     std::unordered_map<std::string,typeInfo> typeTable;
     std::unordered_map<std::string,structInfo> structTable;
+    std::vector<varInfo> FP;
     std::string LoopStartPoint="";
     std::string LoopEndPoint="";
     std::string BranchEndPoint="";

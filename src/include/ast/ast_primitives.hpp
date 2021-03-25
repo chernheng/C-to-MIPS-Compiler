@@ -57,6 +57,14 @@ class Variable : public Program {
                         if(context->tempVarInfo.isPtr==1) {
                             file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                         }
+                        else if(it->second.isFP ==1) {
+                            if(it->second.numBytes == 4){
+                                file<<"l.s "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                            }
+                            if(it->second.numBytes == 8){
+                                file<<"l.d "<<std::string(destReg)<<", "<<offset-4<<"($sp)"<<std::endl;
+                            }
+                        }
                         else if(it->second.numBytes==1)    {
                             if(it->second.isUnsigned==1)    {
                                 file<<"lbu "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
@@ -71,8 +79,23 @@ class Variable : public Program {
                     }
                     else    {   // insert code for global variable reference
                         std::string id = it->first;
-                        file<<"lui "<<std::string(destReg)<<", \%hi("<<id<<")"<<std::endl;
-                        file<<"lw "<<std::string(destReg)<<", \%lo("<<id<<")("<<std::string(destReg)<<")"<<std::endl;
+                        if(it->second.isFP ==1) {
+                            if(it->second.numBytes == 4){
+                                file<<"l.s "<<std::string(destReg)<<", ("<<id<<")"<<std::endl;
+                            }
+                            if(it->second.numBytes == 8){
+                                file<<"l.d "<<std::string(destReg)<<", ("<<id<<")"<<std::endl;
+                            }
+                            
+                        }else {
+                            if(it->second.numBytes==1)    {
+                                file<<"lui "<<std::string(destReg)<<", \%hi("<<id<<")"<<std::endl;
+                                file<<"lbu "<<std::string(destReg)<<", \%lo("<<id<<")("<<std::string(destReg)<<")"<<std::endl;
+                            } else {
+                                file<<"lui "<<std::string(destReg)<<", \%hi("<<id<<")"<<std::endl;
+                                file<<"lw "<<std::string(destReg)<<", \%lo("<<id<<")("<<std::string(destReg)<<")"<<std::endl;
+                            }
+                        }
                     }
                     break;
                 }
@@ -114,7 +137,13 @@ class VariableStore : public Program {  // store vale into variable
                     if(i>0)    { //not global (write to local variable)
                         long offset = context->stack.size - it->second.offset;
                         if (getPtr()==0){
-                            if(it->second.numBytes==1)    {
+                            if(it->second.isFP == 1){
+                                if (it->second.numBytes == 4){
+                                    file <<"s.s "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                                } else if(it->second.numBytes == 8) {
+                                    file <<"s.d "<<destReg<<", "<<(context->stack.size - it->second.offset-4)<<"($sp)"<<std::endl;
+                                }
+                            }else if(it->second.numBytes==1)    {
                                 file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                             }
                             else    {
@@ -132,13 +161,22 @@ class VariableStore : public Program {  // store vale into variable
                         }
                     }
                     else    {   // insert code for storing to global variable reference
-                        if(it->second.numBytes==1)    {
-                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
-                            file<<"sb "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
-                        }
-                        else    {
-                            file<<"lui $t1, %hi("<<id<<")"<<std::endl;
-                            file<<"sw "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                        if(it->second.isFP ==1) {
+                            if(it->second.numBytes == 4){
+                                file<<"s.s "<<std::string(destReg)<<", ("<<id<<")"<<std::endl;
+                            }
+                            if(it->second.numBytes == 8){
+                                file<<"s.d "<<std::string(destReg)<<", ("<<id<<")"<<std::endl;
+                            }
+                        }else {
+                            if(it->second.numBytes==1)    {
+                                file<<"lui $t1, %hi("<<id<<")"<<std::endl;
+                                file<<"sb "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                            }
+                            else    {
+                                file<<"lui $t1, %hi("<<id<<")"<<std::endl;
+                                file<<"sw "<<std::string(destReg)<<", %lo("<<id<<")($t1)"<<std::endl;
+                            }
                         }
                     }
                     break;
@@ -339,6 +377,68 @@ class ArrayStore : public Program {     // store value into array
                 }
             }
             context->stack.slider-=4;
+        }
+};
+
+class Float : public Program {
+    private:
+        std::string value;
+    public:
+        Float(std::string *_value) : value(*_value)  {
+            delete _value;
+        }
+
+        std::string getValue() const    {
+            return value;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<getValue();
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            varInfo tmp;
+            std::string val = getValue();
+            val.pop_back();
+            context->numVal = val;
+            tmp.FP_value = val;
+            tmp.isFP = 1;
+            tmp.numBytes = 4;
+            std::string FloatLabel = makeLabel("Float");
+            tmp.FP_label = FloatLabel;
+            file<<"l.s "<<std::string(destReg)<<", "<<FloatLabel<<std::endl;
+            context->tempVarInfo = tmp;
+            context->FP.push_back(tmp);
+        }
+};
+
+class Double : public Program {
+    private:
+        std::string value;
+    public:
+        Double(std::string *_value) : value(*_value)  {
+            delete _value;
+        }
+
+        std::string getValue() const    {
+            return value;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<getValue();
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            varInfo tmp;
+            context->numVal = getValue();
+            tmp.FP_value = getValue();
+            tmp.isFP = 1;
+            tmp.numBytes = 8;
+            std::string DoubleLabel = makeLabel("Double");
+            tmp.FP_label = DoubleLabel;
+            file<<"l.d "<<std::string(destReg)<<", "<<DoubleLabel<<std::endl;
+            context->tempVarInfo = tmp;
+            context->FP.push_back(tmp);
         }
 };
 

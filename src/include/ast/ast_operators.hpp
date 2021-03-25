@@ -58,15 +58,17 @@ class AssignmentOperator : public Operator {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             // long offset=getLeft()->getOffset(context);
             // std::string t=getLeft()->getVarType(context);
-            getRight()->generate(file, "$t0", context);
-            getLeft()->generate(file, "$t0", context);
+            getRight()->generate(file, destReg, context);
+            getLeft()->generate(file, destReg, context);
             // if(t=="int")    {
             //     file<<"sw $t0, "<<offset<<"($sp)"<<std::endl;
             // }
             // else if(t=="char")  {
             //     file<<"sb $t0, "<<offset<<"($sp)"<<std::endl;
             // }
-            file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
+            if(std::string(destReg)!="$f0"){
+                file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
+            }
         }
 };
 
@@ -277,6 +279,18 @@ class AddOperator : public Operator {
         AddOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            // if (context->tempVarInfo.isFP == 1){
+            //     getLeft()->generate(file, "$f6", context);
+            //     long ofs = context->stack.slider;
+            //     if (context->tempVarInfo.numBytes == 4){
+            //         file<<"l.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            //         context->stack.slider+=4;
+            //     } else if(context->tempVarInfo.numBytes == 8){
+            //         file<<"l.d $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+            //         context->stack.slider+=8;
+            //     }
+            // }
+
             getLeft()->generate(file, "$t1", context);
             long ofs = context->stack.slider;
             file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;

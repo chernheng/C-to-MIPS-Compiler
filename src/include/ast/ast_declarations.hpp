@@ -99,6 +99,9 @@ class DeclareVariable : public Program {
                 if(typeIT->second.isUnsigned > vf.isUnsigned)   {
                     vf.isUnsigned = typeIT->second.isUnsigned;
                 }
+                if(typeIT->second.isFP > vf.isFP) {
+                    vf.isFP = typeIT->second.isFP;
+                }
             }
             // insert declaration of variable of custom struct type
             std::unordered_map<std::string,structInfo>::iterator sIT;
@@ -124,14 +127,27 @@ class DeclareVariable : public Program {
             if (size == 1) {
                 vf.isGlobal = 1;
                 if (init!= nullptr){
-                    init->generate(file, "$t7", context);
+                    if (vf.isFP == 1){
+                        init->generate(file,"$f10",context);
+                    } else {
+                        init->generate(file, "$t7", context);
+                    }
                     std::string value = context->numVal;
                     file<<"   .data"<<std::endl;
                     file<<"   .globl  "<<getID()<<std::endl;
                     file<<"   .type   "<<getID()<<", @object"<<std::endl;
                     file<<"   .size   "<<getID()<<", "<<vf.numBytes<<std::endl;
                     file<<getID()<<":"<<std::endl;
-                    file<<"   .word   "<<value<<std::endl;
+                    if (vf.isFP == 1){
+                        if(vf.numBytes ==4){
+                            file<<"   .float   "<<value<<std::endl;
+                        }
+                        else if(vf.numBytes ==8){
+                            file<<"   .double   "<<value<<std::endl;
+                        }
+                    } else{
+                        file<<"   .word   "<<value<<std::endl;
+                    }
                 } else if (init == nullptr){
                     file<<"   .globl  "<<getID()<<std::endl;
                     file<<"   .type   "<<getID()<<", @object"<<std::endl;
@@ -141,9 +157,8 @@ class DeclareVariable : public Program {
                     file<<"   .space   "<<vf.numBytes<<std::endl;
                 }
             }
-            context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
-            context->stack.slider+=4;
-            if((init!=nullptr)&&(size!=1))   {
+            context->stack.slider+= vf.numBytes == 8? 8:4;
+            if((init!=nullptr)&&(size!=1)&&(vf.isFP ==0||vf.isPtr==1))   { //non floating point, non global, pointer
                 if (size != 1){
                     init->generate(file, "$t7", context);
                 }
@@ -157,7 +172,22 @@ class DeclareVariable : public Program {
                     file<<"sb $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
                 }
             }
-            file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
+
+            if((init!=nullptr)&&(size!=1)&&(vf.isFP ==1)&&vf.isPtr==0)   { //floating point, non global, not pointer
+                varInfo temp = context->FP.back();
+                vf.FP_label = temp.FP_label;
+                vf.FP_value = temp.FP_value;
+                init->generate(file,"$f10",context);
+                if(vf.numBytes==4){
+                    file<<"s.s $f10, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
+                }else if(vf.numBytes==8){
+                    file<<"s.d $f10, "<<(context->stack.size - offset-4)<<"($sp)"<<std::endl;
+                }
+            }
+            context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
+            if (std::string(destReg)!="$f0"){
+                file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
+            }
             return;                        
         }
 };

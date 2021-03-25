@@ -39,8 +39,7 @@ class ReturnStatement : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             if(context->FuncRetnPoint!="")  {                
                 if(getAction()!=nullptr)    {
-                    getAction()->generate(file, "$v0", context);
-                    file<<"move "<<std::string(destReg)<<", $v0"<<std::endl;
+                    getAction()->generate(file, destReg, context);
                 }
                 file<<"b "<<context->FuncRetnPoint<<std::endl;
                 file<<"nop"<<std::endl;

@@ -13,8 +13,8 @@ int main(int argc, char** argv)
 
     context.typeTable.insert(std::pair<std::string,typeInfo>("int",{"",4,0}));  // insert int type into typeTable
     context.typeTable.insert(std::pair<std::string,typeInfo>("char",{"",1,0}));  // insert char type into typeTable
-    context.typeTable.insert(std::pair<std::string,typeInfo>("float",{"",4,0}));  // insert float type into typeTable
-    context.typeTable.insert(std::pair<std::string,typeInfo>("double",{"",8,0}));  // insert double type into typeTable
+    context.typeTable.insert(std::pair<std::string,typeInfo>("float",{"",4,0,0,1}));  // insert float type into typeTable
+    context.typeTable.insert(std::pair<std::string,typeInfo>("double",{"",8,0,0,1}));  // insert double type into typeTable
     context.typeTable.insert(std::pair<std::string,typeInfo>("unsigned",{"",4,0}));  // insert unsigned type into typeTable (unsigned: unsigned int)
 
     myfile<<".abicalls"<<std::endl;

@@ -273,7 +273,11 @@ class FunctionDef : public Program {    // function definition
                 context->ArgCount=0;
             }
 
-            action->generate(file, destReg, context);           // run function code
+            if (type == "float" || type == "double" ){
+                action->generate(file, "$f0", context);
+            } else {
+                action->generate(file, destReg, context);           // run function code
+            }
 
             file<<"move $sp, $fp"<<std::endl;                   // deallocate stack space for $fp
             file<<"lw $fp, 4($sp)"<<std::endl;
@@ -290,6 +294,18 @@ class FunctionDef : public Program {    // function definition
             context->stack.slider = initSL;
             context->stack.size = initSP;
             context->stack.FP = initFP;
+            if (context->FP.size()!=0){
+                file << "     .data" << std::endl;
+            }
+            while (context->FP.size() != 0) {
+                varInfo temp = context->FP.back();
+                if (temp.numBytes== 8){
+                    file << temp.FP_label << ":   .double " <<temp.FP_value<<std::endl;
+                }else if(temp.numBytes ==4){
+                    file << temp.FP_label << ":   .float " <<temp.FP_value<<std::endl;
+                }
+                context->FP.pop_back();
+            }
         }
 
         // virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
