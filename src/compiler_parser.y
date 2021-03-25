@@ -21,6 +21,7 @@
   DeclareArrayElement *arrDecElements;
   ArrayIndex *arrIndex;
   CaseBlock *caseptr;
+  AccessStructElement *accStructElement;
   double number;
   std::string *string;
 }
@@ -37,12 +38,13 @@
 %type <programPtr> FUNCTION LOOP BRANCH STATEMENT SCOPE ASSIGNMENT FLOW RETN STATE SWITCH TYPE_DECLARATION SIZEOF OP_ASSIGNMENT
 %type <programPtr> DECLARATION VAR_DECLARATION FUNCTION_DEF FUNC_DECLARATION ARR_INIT_VAL 
 %type <programPtr> MATH WHILE_LOOP FOR_LOOP CONDITION FACTOR VARIABLE ELSE_BLOCK TERM NEG ADDSHIFT ELIF_BLOCK TERNARY VARIABLE_STORE
-%type <programPtr> STRUCT_DECLARATION STRUCT_DEC_ELEMENT STRUCT_ELEMENT
+%type <programPtr> STRUCT_DECLARATION STRUCT_DEC_ELEMENT STRUCT
 %type <fnDefArgs> DEF_ARGS
 %type <fnCallArgs> CALL_ARGS
 %type <caseptr> CASE
 %type <arrDecElements> ARR_DEC_INDEX
 %type <arrIndex> ARRAY_INDEX
+%type <accStructElement> STRUCT_ELEMENT
 
 
 %start ROOT
@@ -73,6 +75,7 @@ MAIN_SEQ : DECLARATION              { $$ = new Command($1,nullptr); }    //int x
          | FUNCTION_DEF MAIN_SEQ    { $$ = new Command($1,$2); }
 
 STRUCT_DECLARATION : KW_STRUCT NAME B_LCURLY STRUCT_DEC_ELEMENT B_RCURLY SEMI_COLON  { $$ = new DeclareStruct($2,$4); }
+                   | KW_TYPEDEF KW_STRUCT B_LCURLY STRUCT_DEC_ELEMENT B_RCURLY NAME SEMI_COLON { $$ = new DeclareStruct($6,$4); }
 
 STRUCT_DEC_ELEMENT : NAME NAME SEMI_COLON                                  { $$ = new DeclareStructElement($1,$2,0,0,nullptr); }
                    | NAME NAME SEMI_COLON STRUCT_DEC_ELEMENT               { $$ = new DeclareStructElement($1,$2,0,0,$4); }
@@ -266,15 +269,20 @@ FACTOR : VARIABLE     { $$ = $1; }    // variable
        | SIZEOF     { $$ = $1; }
        | B_LBRACKET MATH B_RBRACKET { $$ = $2; }
 
-VARIABLE : NAME               { $$ = new Variable($1); }    // variable
-         | NAME ARRAY_INDEX   { $$ = new Array($1,$2); }
+VARIABLE : NAME                    { $$ = new Variable($1); }    // variable
+         | NAME ARRAY_INDEX        { $$ = new Array($1,$2); }
+         | NAME DOT STRUCT_ELEMENT { $$ = new StructRead($1,$3); }
 
 ARRAY_INDEX : B_LSQUARE MATH B_RSQUARE                 { $$ = new ArrayIndex($2,nullptr); }    // handle array index
             | B_LSQUARE MATH B_RSQUARE ARRAY_INDEX     { $$ = new ArrayIndex($2,$4); }
 
-VARIABLE_STORE : NAME              { $$ = new VariableStore($1,0); }    // store to variable or array
-               | NAME ARRAY_INDEX  { $$ = new ArrayStore($1,$2); }
-               | OP_TIMES NAME     { $$ = new VariableStore($2,1);}
+VARIABLE_STORE : NAME                        { $$ = new VariableStore($1,0); }    // store to variable or array
+               | NAME ARRAY_INDEX            { $$ = new ArrayStore($1,$2); }
+               | OP_TIMES NAME               { $$ = new VariableStore($2,1);}
+               | NAME DOT STRUCT_ELEMENT     { $$ = new StructStore($1,$3); }
+
+STRUCT_ELEMENT : NAME                        { $$ = new AccessStructElement($1,nullptr); }
+               | NAME DOT STRUCT_ELEMENT     { $$ = new AccessStructElement($1,$3); }
 
 SIZEOF : KW_SIZEOF B_LBRACKET NAME B_RBRACKET               { $$ = new FunctionSizeof($3,nullptr); }
        | KW_SIZEOF B_LBRACKET NAME ARR_DEC_INDEX B_RBRACKET { $$ = new FunctionSizeof($3,$4); }

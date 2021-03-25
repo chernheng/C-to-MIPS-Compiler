@@ -366,4 +366,158 @@ class Number : public Program {
         }
 };
 
+class AccessStructElement : public Program {
+    private:
+        std::string id;
+        AccessStructElement *next=nullptr;
+    public:
+        AccessStructElement(std::string *_id, AccessStructElement *_next)  : id(*_id), next(_next)  {
+            delete _id;
+        }
+
+        ~AccessStructElement()  {
+            delete next;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<id;
+            if(next!=nullptr)   {
+                dst<<".";
+                next->print(dst);
+            }
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {   // gets offset of element relative to struct base
+            std::unordered_map<std::string,varInfo>::iterator it1;
+            it1 = context->stPointer->structElements.find(id);
+            context->tempVarInfo.numBytes *= it1->second.numBytes;
+            if(it1->second.isPtr > context->tempVarInfo.isPtr)  {
+                context->tempVarInfo.isPtr = it1->second.isPtr;
+            }
+            if(it1->second.isUnsigned > context->tempVarInfo.isUnsigned)    {
+                context->tempVarInfo.isUnsigned= it1->second.isUnsigned;
+            }
+            file<<"addiu "<<std::string(destReg)<<", "<<it1->second.offset<<std::endl;
+            if(next!=nullptr)   {
+                next->generate(file, destReg, context);
+            }
+        }
+};
+
+class StructRead : public Program {
+    private:
+        std::string id;
+        AccessStructElement *element;
+    public:
+        StructRead(std::string *_id, AccessStructElement *_ele) : id(*_id), element(_ele)  {
+            delete _id;
+        }
+
+        ~StructRead()   {
+            delete element;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<id<<".";
+            element->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            structInfo *initSTP = context->stPointer;
+            varInfo initVF=context->tempVarInfo;
+            context->tempVarInfo.numBytes=1;
+            context->tempVarInfo.isPtr=0;
+            context->tempVarInfo.isUnsigned=0;
+            std::unordered_map<std::string,structInfo>::iterator sIT;            
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {                       // get base address of struct instance
+                it=context->stack.lut.at(i).find(id);
+                if(it!=context->stack.lut.at(i).end())  {
+                    if(i>0) {   // local struct instance 
+                        sIT = context->structTable.find(it->second.type);    // find struct info
+                        context->stPointer = &sIT->second;
+                        file<<"move $t4, $zero"<<std::endl;
+                        element->generate(file, "$t4", context);  // get element offset
+                        file<<"lw $t3, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl; // load base address to $t3
+                        file<<"addu $t5, $t3, $t4"<<std::endl;
+                        if(context->tempVarInfo.numBytes==1 && context->tempVarInfo.isPtr==0) {
+                            if(context->tempVarInfo.isUnsigned==1)  {
+                                file<<"lbu "<<std::string(destReg)<<", 0($t5)"<<std::endl;
+                            }
+                            else    {
+                                file<<"lb "<<std::string(destReg)<<", 0($t5)"<<std::endl;
+                            }
+                        }
+                        else    {
+                            file<<"lw "<<std::string(destReg)<<", 0($t5)"<<std::endl;
+                        }                        
+                    }
+                    else    {   // global struct instance 
+
+                    }
+                    break;
+                }                
+            }
+            context->tempVarInfo=initVF;
+            context->stPointer=initSTP;
+        }
+};
+
+class StructStore : public Program {
+    private:
+        std::string id;
+        AccessStructElement *element;
+    public:
+        StructStore(std::string *_id, AccessStructElement *_ele) : id(*_id), element(_ele)  {
+            delete _id;
+        }
+
+        ~StructStore()  {
+            delete element;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<id<<".";
+            element->print(dst);
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {       // value comes in destReg       
+            file<<"move $t0, "<<std::string(destReg)<<std::endl;    // temporarily sotre value into $t0
+            structInfo *initSTP = context->stPointer;
+            varInfo initVF=context->tempVarInfo;
+            context->tempVarInfo.numBytes=1;
+            context->tempVarInfo.isPtr=0;
+            context->tempVarInfo.isUnsigned=0;
+            std::unordered_map<std::string,structInfo>::iterator sIT;            
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {                       // get base address of struct instance
+                it=context->stack.lut.at(i).find(id);
+                if(it!=context->stack.lut.at(i).end())  {
+                    if(i>0) {                                       // local struct instance 
+                        sIT = context->structTable.find(it->second.type);    // find struct info
+                        context->stPointer = &sIT->second;
+                        file<<"move $t4, $zero"<<std::endl;
+                        element->generate(file, "$t4", context);  // get element offset
+                        file<<"lw $t3, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl; // load base address to $t3
+                        file<<"addu $t5, $t3, $t4"<<std::endl;
+                        if(context->tempVarInfo.numBytes==1 && context->tempVarInfo.isPtr==0) {
+                            file<<"sb "<<std::string(destReg)<<", 0($t5)"<<std::endl;
+                        }
+                        else    {
+                            file<<"sw "<<std::string(destReg)<<", 0($t5)"<<std::endl;
+                        }                        
+                    }
+                    else    {   // global struct instance 
+
+                    }
+                    break;
+                }                
+            }
+            context->tempVarInfo=initVF;
+            context->stPointer=initSTP;
+        }
+};
+
 #endif

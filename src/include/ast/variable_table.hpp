@@ -74,6 +74,7 @@ struct Context {
     long LoopInitSP=0;
     int ArgCount=0;
     long indexCounter=0;
+    long elementNumBytes=1;
 };
 
 #endif

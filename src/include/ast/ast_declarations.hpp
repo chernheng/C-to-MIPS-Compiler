@@ -51,16 +51,23 @@ class DeclareVariable : public Program {
             long tmp=1;     // store size of 1 element (in bytes)
             std::unordered_map<std::string,typeInfo>::iterator typeIT;
             std::string bind_name = type;
+            std::string t = type;
             while(bind_name!="")    {
                 typeIT = context->typeTable.find(bind_name);
                 bind_name=typeIT->second.type;
                 tmp*=typeIT->second.size;
+                if(typeIT->second.type!="") {
+                    t=typeIT->second.type;
+                }
             }
             if(ptr==1)  {
                 tmp=4;  // pointer uses 4 bytes
             }
             if(init!=nullptr)   {
                 tmp += init->spaceRequired(context);
+            }
+            if(context->structTable.find(t)!=context->structTable.end())    {   // struct instance needs 4 more bytes for pointer
+                tmp+=4;
             }
             return tmp;
         }
@@ -104,6 +111,7 @@ class DeclareVariable : public Program {
                     file<<"addiu $t1, $sp, "<<(context->stack.size - context->stack.slider + 4)<<std::endl; // calculate address of 1st element
                     file<<"sw $t1, "<<(context->stack.size - context->stack.slider)<<"($sp)"<<std::endl;    // store pointer to stack
                     context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
+                    context->stack.slider+=4;
                     return;
                 }
                 else    {   // global struct instance
@@ -575,7 +583,7 @@ class DeclareStruct : public Program {
             dst<<"};"<<std::endl;
         }
 
-        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {            
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {  
             if(elements!=nullptr)   {   // if struct has no elements, no need to create it
                 structInfo si;
                 structInfo *initSIP = context->stPointer;
@@ -584,7 +592,7 @@ class DeclareStruct : public Program {
                 context->structTable.insert(std::pair<std::string,structInfo>(id,si));
                 context->typeTable.insert(std::pair<std::string,typeInfo>(id,{"",si.size,0,0}));
                 context->stPointer = initSIP;
-            }            
+            }
         }
 };
 
