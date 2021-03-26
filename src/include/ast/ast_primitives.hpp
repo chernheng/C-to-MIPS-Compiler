@@ -174,8 +174,7 @@ class VariableStore : public Program {  // store vale into variable
                 it=context->stack.lut.at(i).find(getID());
                 if(it!=context->stack.lut.at(i).end()) {
                     context->tempVarInfo = it->second;
-                    if(i>0)    { //not global (write to local variable)
-                        long offset = context->stack.size - it->second.offset;
+                    if(i>0)    { //not global (write to local variable
                         if (getPtr()==0){
                             if(it->second.isFP == 1 && it->second.isPtr == 0){
                                 if (it->second.numBytes == 4){
