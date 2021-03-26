@@ -1228,7 +1228,7 @@ class PointerArrowRead : public Operator {
     public:
         PointerArrowRead(ProgramPtr _id, ProgramPtr _ele) : Operator(_id, _ele) {}
 
-        virtual void generate(std::ofstream &file, const char* destReg, Context*context) const override {
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
             varInfo initTempVF = context->tempVarInfo;
             file<<"move $t3, $zero"<<std::endl;
             getLeft()->generate(file, "$t3", context);      // store struct base pointer into $t3
@@ -1247,6 +1247,44 @@ class PointerArrowRead : public Operator {
             }
             else    {
                 file<<"lw "<<std::string(destReg)<<", 0($t3)"<<std::endl;
+            }
+            context->tempVarInfo = initTempVF;
+        }
+};
+
+class PointerArrowStore : public Operator {
+    protected:
+        virtual const char* getOpcode() const override {
+            return "->";
+        }
+    public:
+        PointerArrowStore(ProgramPtr _id, ProgramPtr _ele) : Operator(_id, _ele) {}
+
+        virtual long spaceRequired(Context *context) const override {
+            long tmp=4;
+            tmp+=getLeft()->spaceRequired(context);
+            tmp+=getRight()->spaceRequired(context);
+            return tmp;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override {
+            file<<"sw "<<std::string(destReg)<<", "<<(context->stack.size - context->stack.slider)<<"($sp)"<<std::endl;
+            context->stack.slider+=4;
+            varInfo initTempVF = context->tempVarInfo;
+            file<<"move $t3, $zero"<<std::endl;
+            getLeft()->generate(file, "$t3", context);      // store struct base pointer into $t3
+            context->stPointer = &context->structTable.find(context->tempVarInfo.type)->second;
+            context->tempVarInfo.numBytes=1;
+            context->tempVarInfo.isPtr=0;
+            context->tempVarInfo.isUnsigned=0;
+            getRight()->generate(file, "$t3", context);     // add element offset to struct base pointer
+            context->stack.slider-=4;
+            file<<"lw $t0, "<<(context->stack.size - context->stack.slider)<<"($sp)"<<std::endl;            
+            if(context->tempVarInfo.numBytes==1 && context->tempVarInfo.isPtr==0)   {
+                file<<"sb $t0, 0($t3)"<<std::endl;
+            }
+            else    {
+                file<<"sw $t0, 0($t3)"<<std::endl;
             }
             context->tempVarInfo = initTempVF;
         }
