@@ -433,6 +433,10 @@ class AddOperator : public Operator {
                     file<<"mflo $t1"<<std::endl;
                     context->stack.slider-=4;
                     file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                }else {
+                    file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
                 }
             } else if (type == "double" || type == "float"){
                 getLeft()->generate(file, "$f6", context);
@@ -513,6 +517,10 @@ class SubOperator : public Operator {
                     file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
                     file<<"mult $t1, $t3"<<std::endl;
                     file<<"mflo $t1"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                }else {
+                    file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
                     context->stack.slider-=4;
                     file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
                 }
