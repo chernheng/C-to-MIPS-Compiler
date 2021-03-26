@@ -59,18 +59,18 @@ class DeclareVariable : public Program {
                 if(typeIT->second.type!="") {
                     t=typeIT->second.type;
                 }
-            }
+            }            
             if(ptr==1)  {
                 tmp=4;  // pointer uses 4 bytes
+            }
+            if(tmp%4)   {
+                tmp+=4-(tmp%4);
             }
             if(init!=nullptr)   {
                 tmp += init->spaceRequired(context);
             }
             if(context->structTable.find(t)!=context->structTable.end() && ptr==0)    {   // struct instance needs 4 more bytes for base pointer
                 tmp+=4;
-                if(tmp%4)   {
-                    tmp+=4-(tmp%4);
-                }
             }
             return tmp;
         }
