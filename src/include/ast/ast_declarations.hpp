@@ -68,6 +68,9 @@ class DeclareVariable : public Program {
             }
             if(context->structTable.find(t)!=context->structTable.end() && ptr==0)    {   // struct instance needs 4 more bytes for base pointer
                 tmp+=4;
+                if(tmp%4)   {
+                    tmp+=4-(tmp%4);
+                }
             }
             return tmp;
         }
@@ -108,7 +111,11 @@ class DeclareVariable : public Program {
             sIT = context->structTable.find(vf.type);
             if(sIT!=context->structTable.end() && vf.isPtr==0) {   // check if type is a struct and variable is not a pointer
                 if(size>1)  {   // local struct instance
-                    context->stack.slider+=vf.numBytes+4;
+                    long alignSize= vf.numBytes;
+                    if(alignSize%4) {
+                        alignSize += 4-(alignSize%4);
+                    }
+                    context->stack.slider+=alignSize+4;
                     vf.isPtr=1;
                     vf.offset = context->stack.slider;
                     file<<"addiu $t1, $sp, "<<(context->stack.size - context->stack.slider + 4)<<std::endl; // calculate address of 1st element
