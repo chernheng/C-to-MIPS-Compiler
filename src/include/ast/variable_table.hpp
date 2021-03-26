@@ -77,8 +77,11 @@ struct Context {
     int isSwitch=0;
     long LoopInitSP=0;
     int ArgCount=0;
+    int FPArgCount =0;
+    long ArgOffset = 0;
     long indexCounter=0;
     long elementNumBytes=1;
+    int totalArgCount = 0;
 };
 
 #endif

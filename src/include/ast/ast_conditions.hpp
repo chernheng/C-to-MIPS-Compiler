@@ -47,6 +47,33 @@ class EqualTo : public Condition {      // a == b
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {   // destReg = 1 if true, destReg = 0 if false
             long tmpOffset = context->stack.size - context->stack.slider;
+            std::string type = getA()->getVarType(context);
+            if (type == "float"||type == "double"){
+                getA()->generate(file, "$f6", context);                             // store value of A into $t1
+                if (type == "float"){
+                    file<<"s.s $f6, "<<tmpOffset<<"($sp)"<<std::endl;
+                    context->stack.slider+=4;
+                } else {
+                    file<<"s.d $f6, "<<tmpOffset-4<<"($sp)"<<std::endl;
+                    context->stack.slider+=8;
+                }
+                getB()->generate(file, "$f8", context);                             // store value of B into $t2
+                if (type == "float"){
+                    file<<"l.s $f6, "<<tmpOffset<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                } else {
+                    file<<"l.d $f6, "<<tmpOffset-4<<"($sp)"<<std::endl;
+                    context->stack.slider-=8;
+                }
+                file<<"addiu $t0, $zero, 1"<<std::endl;      // addiu destReg, $zero, 1 (set destReg = 1)
+                std::string tmpLabel=makeLabel("cond_EQ");
+                file<<"c.eq.s $f6, $f8"<<std::endl;
+                file<<"bc1t "<<tmpLabel<<std::endl;                        // beq $t1, $t2, tmpLabel (if A == B, skip zeroing of destReg)
+                file<<"nop"<<std::endl;
+                file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
+                file<<tmpLabel<<":"<<std::endl;
+                file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+            } else {
             getA()->generate(file, "$t1", context);                             // store value of A into $t1
             file<<"sw $t1, "<<tmpOffset<<"($sp)"<<std::endl;
             context->stack.slider+=4;
@@ -60,6 +87,7 @@ class EqualTo : public Condition {      // a == b
             file<<"addiu $t0, $zero, 0"<<std::endl;      // addiu destReg, $zero, 0 (zero destReg) 
             file<<tmpLabel<<":"<<std::endl;
             file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+            }
         }
 };
 

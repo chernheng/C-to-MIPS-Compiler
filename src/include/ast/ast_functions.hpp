@@ -49,8 +49,11 @@ class FunctionDefArgs : public FunctionArgs {
             if(ptr==1)  {
                 tmp=4;
             }
-            else if(type=="int" || type=="char")  {
+            else if(type=="int" || type=="char" ||type=="float")  {
                 tmp=4;
+            }
+            else if(type=="double"){
+                tmp=8;
             }
             if(next!=nullptr)   {
                 tmp+=next->spaceRequired(context);
@@ -68,29 +71,75 @@ class FunctionDefArgs : public FunctionArgs {
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             varInfo vf;
-            long delta = context->stack.FP - (4*context->ArgCount);
-            vf.offset=delta;
-            vf.type=type;
-            vf.isPtr = ptr;
-            if(type=="char")   {
-                vf.length=1;
-                vf.numBytes=1;
-            }
-            else    {
-                vf.length=1;
-                vf.numBytes=4;
-            }
-            context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
-            context->ftEntry->second.argList.push_back(vf);
-            if(context->ArgCount<4) {
-                if(vf.numBytes==1 && vf.isPtr==0)  {
-                    file<<"sb $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+            vf.length=1;
+            if((type=="float"||type=="double")&&vf.isPtr==0){
+                long delta = context->stack.FP - context->ArgOffset;
+                vf.offset=delta;
+                vf.type=type;
+                vf.isPtr = ptr;
+                vf.isFP =1;
+                if(type=="double")   {
+                    vf.numBytes=8;
                 }
                 else    {
-                    file<<"sw $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
-                }                
+                    vf.numBytes=4;
+                }
+                context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
+                context->ftEntry->second.argList.push_back(vf);
+                if ((context->ArgCount>0 && context->totalArgCount<4)||(context->FPArgCount>1 && context->totalArgCount<4)){
+                    if(type=="float") {
+                        file<<"sw $a"<<context->totalArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                    } else if (type=="double" && context->totalArgCount<3){
+                        file<<"sw $a"<<context->totalArgCount+1<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                        file<<"sw $a"<<context->totalArgCount<<", "<<(context->stack.size - delta+4)<<"($sp)"<<std::endl;
+                    }
+                }
+                else if(context->FPArgCount<2) {
+                    if(type == "float")  {
+                        file<<"s.s $f"<<(context->FPArgCount*2)+12<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                        context->ArgOffset+=4;
+                    }
+                    else    {
+                        file<<"s.d $f"<<(context->FPArgCount*2)+12<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                        context->ArgOffset+=8;
+                    }                
+                }
+                context->FPArgCount++;
+                context->totalArgCount++;
+            } 
+            else {
+                long delta = context->stack.FP - context->ArgOffset;
+                vf.offset=delta;
+                vf.type=type;
+                vf.isPtr = ptr;
+                if(type=="char")   {
+                    vf.numBytes=1;
+                }
+                else    {
+                    vf.numBytes=4;
+                }
+                context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
+                context->ftEntry->second.argList.push_back(vf);
+                if(context->FPArgCount>0 && context->totalArgCount<4){
+                    if(vf.numBytes==1 && vf.isPtr==0)  {
+                        file<<"sb $a"<<context->totalArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                    }
+                    else    {
+                        file<<"sw $a"<<context->totalArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                    }     
+                }
+                else if(context->ArgCount<4) {
+                    if(vf.numBytes==1 && vf.isPtr==0)  {
+                        file<<"sb $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                    }
+                    else    {
+                        file<<"sw $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                    }                
+                }
+                context->ArgCount++;
+                context->ArgOffset+=4;
+                context->totalArgCount++;
             }
-            context->ArgCount++;
             if(next!=nullptr)   {
                 next->generate(file, destReg,context);
             }
@@ -118,6 +167,7 @@ class FunctionCallArgs : public FunctionArgs {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string type = action->getVarType(context);
             action->generate(file, "$t5", context);
             if(context->ArgCount<4) {
                 file<<"move $a"<<context->ArgCount<<", $t5"<<std::endl;
@@ -276,9 +326,15 @@ class FunctionDef : public Program {    // function definition
             context->ftEntry = context->ftable.find(getID());
             if(args!=nullptr)   {                                       // load arguments info into variable scope table (if any)
                 context->ArgCount=0;
+                context->FPArgCount=0;
+                context->ArgOffset=0;
+                context->totalArgCount =0;
                 it->second.argCount = args->getCount();
                 args->generate(file, "$t0", context);
                 context->ArgCount=0;
+                context->FPArgCount=0;
+                context->ArgOffset=0;
+                context->totalArgCount =0;
             }
 
             if (type == "float" || type == "double" ){

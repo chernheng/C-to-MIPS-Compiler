@@ -397,6 +397,10 @@ class AddOperator : public Operator {
     public:
         AddOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
 
+        virtual std::string getVarType(Context *context) const override {
+            return getLeft()->getVarType(context);
+        }
+
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::string type = getLeft()->getVarType(context);
             int ptr_left = getLeft()->getPointer(context);
@@ -483,6 +487,10 @@ class SubOperator : public Operator {
     public:
         SubOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)  {}
 
+        virtual std::string getVarType(Context *context) const override {
+            return getLeft()->getVarType(context);
+        }
+
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
                        std::string type = getLeft()->getVarType(context);
             int ptr_left = getLeft()->getPointer(context);
@@ -567,6 +575,10 @@ class MulOperator : public Operator {
     public:
         MulOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
 
+        virtual std::string getVarType(Context *context) const override {
+            return getLeft()->getVarType(context);
+        }
+
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::string type = getLeft()->getVarType(context);
             if (type == "double" || type == "float"){
@@ -612,6 +624,10 @@ class DivOperator : public Operator {
         }
     public:
         DivOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
+
+        virtual std::string getVarType(Context *context) const override {
+            return getLeft()->getVarType(context);
+        }
         
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::string type = getLeft()->getVarType(context);
