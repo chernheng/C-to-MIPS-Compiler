@@ -90,8 +90,8 @@ class FunctionDefArgs : public FunctionArgs {
                     if(type=="float") {
                         file<<"sw $a"<<context->totalArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
                     } else if (type=="double" && context->totalArgCount<3){
-                        file<<"sw $a"<<context->totalArgCount+1<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
-                        file<<"sw $a"<<context->totalArgCount<<", "<<(context->stack.size - delta+4)<<"($sp)"<<std::endl;
+                        file<<"sw $a"<<context->totalArgCount+1<<", "<<(context->stack.size - delta+4)<<"($sp)"<<std::endl;
+                        file<<"sw $a"<<context->totalArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
                     }
                 }
                 else if(context->FPArgCount<2) {
@@ -120,7 +120,7 @@ class FunctionDefArgs : public FunctionArgs {
                 }
                 context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
                 context->ftEntry->second.argList.push_back(vf);
-                if(context->FPArgCount>0 && context->totalArgCount<4){
+                if(context->FPArgCount>0 && context->ArgOffset<12){
                     if(vf.numBytes==1 && vf.isPtr==0)  {
                         file<<"sb $a"<<context->totalArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
                     }
