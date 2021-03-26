@@ -11,7 +11,7 @@ Week 2: Finish intermediate requirements
 
 Week 3: Test for intermediates funcitionality and design the advanced functionality
 
-Week 4: Finish intermediate requirements
+Week 4: Finish advanced requirements
 
 Our internal deadline of project: 22nd March 2021 (Week 5) to give buffer time in case any issues arises
 
@@ -19,11 +19,12 @@ Key responsibilities
 ======================
 Joshua:
 -   Building the framework of the compiler
+-   Handle the stack allocation
 
 Chern Heng
 -   Testing and helping with the building and testing of different aspects of the compiler
 
-Meet up every Friday to share the progress of the week
+Meet up every Friday to collaborate and do as much as we can. We will share the progress of the week and split up the work evenly for the next week. The work was split according to what needed to be done and both took up responsibilities to implement and test different aspects of the compiler.
 
 Tasks:
 ======================
@@ -38,9 +39,13 @@ Tasks:
 
 3. Continually add to the framework of lexer and parser and code generation so that it is be able to handle intermediate requirements
 
+4. Create additional tests to ensure things don't break
+
+4. Add advance requirements but still making sure previous things don't break.
+
 Basic Features:
 ======================
--   ~~a file containing just a single function with no arguments (DONE) (4th Mar)~~
+-   ~~a file containing just a single function with no arguments (DONE) (4th Mar)~~ 
 -   ~~variables of int type (DONE) (4th Mar)~~
 -   ~~local variables (DONE) (4th Mar)~~
 -   ~~arithmetic and logical expressions (DONE) (4th Mar)~~
@@ -62,18 +67,18 @@ Intermediate features:
 
 Advanced features:
 ======================
--   variables of double, float, char, unsigned, structs, and pointer types
+-   variables of double, float, char, unsigned, structs, and pointer types (Double and structs took alot of time, did not manage to implement arrays within the structs and implement fully the functions of Double)
 -   ~~calling externally-defined functions (i.e. the file being compiled declares a function, but its definition is provided in a different file that is linked in later on) (DONE) (20th Mar)~~ but need more testing
 -   ~~functions that take more than four parameters (DONE) (10th Mar)~~
 -   ~~mutually recursive function calls~~
 -   ~~locally scoped variable declarations (e.g. a variable that is declared inside the body of a while loop, such as while(...) { int x = ...; ... } (Test) DONE (4th Mar)~~
--   the typedef keyword
--   the sizeof(...) function (which takes either a type or a variable)
+-   ~~the typedef keyword DONE (25th Mar)~~
+-   ~~the sizeof(...) function (which takes either a type or a variable) DONE (25th Mar)~~
 -   ~~taking the address of a variable using the & operator (DONE) (5th Mar)~~
 -   ~~dereferencing a pointer-variable using the * operator (DONE) (5th Mar)~~
 -   ~~pointer arithmetic (DONE) (5th Mar)~~
 -   character literals, including escape sequences like \n
 -   strings (as NULL-terminated character arrays)
--   declaration and use of structs
+-   ~~declaration and use of structs (DONE) (25th Mar)~~
 
 
