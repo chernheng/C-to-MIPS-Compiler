@@ -94,6 +94,7 @@ class AssignmentSumOperator : public Operator {
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            
             getRight()->generate(file,"$t2",context);
             getLeft()->generate(file, "$t0", context);
             file<<"addu $t2, $t0, $t2"<<std::endl;
