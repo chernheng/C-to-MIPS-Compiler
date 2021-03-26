@@ -32,10 +32,10 @@ struct          { return KW_STRUCT; }
 "}"             { return B_RCURLY;}
 "["             { return B_LSQUARE;}
 "]"             { return B_RSQUARE;}
-[\(]             { return B_LBRACKET; }
-[\)]             { return B_RBRACKET; }
+[\(]            { return B_LBRACKET; }
+[\)]            { return B_RBRACKET; }
 
-"<="              { return COND_LTEQ;}
+"<="            { return COND_LTEQ;}
 >=              { return COND_GREQ;}
 ==              { return COND_EQ;}
 !=              { return COND_NEQ;}
@@ -45,6 +45,7 @@ struct          { return KW_STRUCT; }
 "||"            { return COND_OR;}
 [!]             { return COND_NOT;}
 
+"->"            { return OP_SPOINT; }
 [=]             { return OP_EQUAL;}
 [*]             { return OP_TIMES; }
 [+]             { return OP_PLUS; }
@@ -68,7 +69,7 @@ struct          { return KW_STRUCT; }
 
 ","             { return COMMA;}
 "."             { return DOT;}
-"\:"             { return COLON;}
+"\:"            { return COLON;}
 [;]             { return SEMI_COLON;}
 
 [ \t\r\n\f\v\b\a]+		{;}
@@ -78,7 +79,7 @@ struct          { return KW_STRUCT; }
 0[xX][a-fA-F0-9]+       {yylval.string= new std::string(yytext); return HEX; }
 [a-zA-Z_]+[a-zA-Z0-9_]* { yylval.string= new std::string(yytext); return NAME; } /*A variable name can only have letters (both uppercase and lowercase letters),
                                                                                          digits and underscore, and  first letter should be either a letter or an underscore */
-
+\/\/.*\n        {}  // comments
 
 .               { fprintf(stderr, "Invalid token\n"); exit(1); }
 %%
