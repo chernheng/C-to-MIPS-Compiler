@@ -2,7 +2,6 @@
 
 if [ $# -lt 1 ]; then
     FOLDER_LIST=$(ls -1 compiler_tests/ )
-    echo "$FOLDER_LIST"
 else
     FOLDER_LIST="$1"
 fi
@@ -22,6 +21,7 @@ do
     fi
 
     FOLDER="compiler_tests/$FOLDER_NAME"
+    mkdir -p "temp/$FOLDER_NAME"
     TEST_LIST=$(ls -1 $FOLDER | grep _driver.c | awk -F "_driver.c" '{print $1}' )
     if [ -z "$TEST_LIST" ]; then
         echo "no tests to run"
