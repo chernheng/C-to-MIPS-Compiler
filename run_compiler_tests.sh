@@ -2,7 +2,6 @@
 
 if [ $# -lt 1 ]; then
     FOLDER_LIST=$(ls -1 compiler_tests/ )
-    echo "$FOLDER_LIST"
 else
     FOLDER_LIST="$1"
 fi
