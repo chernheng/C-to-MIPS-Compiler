@@ -171,6 +171,12 @@ class DeclareVariable : public Program {
                 }
                 if (vf.isPtr==1){
                     file<<"sw $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
+                    if(context->isStrLiteral==1)    {
+                        vf.dimension.push_back(context->strLiteralLength);
+                        vf.blockSize.push_back(1);
+                        context->strLiteralLength=0;
+                        context->isStrLiteral=0;
+                    }
                 }
                 else if(stackInc==4) {
                     file<<"sw $t7, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;

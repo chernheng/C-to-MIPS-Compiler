@@ -77,8 +77,8 @@ struct          { return KW_STRUCT; }
 [0-9]+([.][0-9]*)?      { yylval.string= new std::string(yytext); return DOUBLE; }
 [0-9]+([.][0-9]*)?[f|F]      { yylval.string= new std::string(yytext); return FLOAT; }
 0[xX][a-fA-F0-9]+       {yylval.string= new std::string(yytext); return HEX; }
-"\t"|"\r"|"\n"|"\f"|"\v"|"\b"|"\a"  { yylval.string= new std::string(yytext); return ESC_SEQ; }
 '[\x01-\x26\x28-\xff]'     { yylval.string= new std::string(yytext); return ONE_CHAR; }
+\"[\x01-\x21\x23-\xff]*\"  { yylval.string= new std::string(yytext); return STRING; }
 [a-zA-Z_]+[a-zA-Z0-9_]* { yylval.string= new std::string(yytext); return NAME; } /*A variable name can only have letters (both uppercase and lowercase letters),
                                                                                          digits and underscore, and  first letter should be either a letter or an underscore */
 \/\/.*\n        {}  // comments
