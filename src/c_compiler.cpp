@@ -21,6 +21,15 @@ int main(int argc, char** argv)
     // myfile<<".text"<<std::endl;
     ast->print(std::cout);
     ast->generate(myfile,"$v0",&context);
+    if(context.strList.size()>0)    {
+        for(int i=0;i<context.strList.size();i++)   {
+            myfile<<".text"<<std::endl;
+            myfile<<".rdata"<<std::endl;
+            myfile<<".align 2"<<std::endl;
+            myfile<<context.strList.at(i).first<<":"<<std::endl;
+            myfile<<".ascii "<<'"'<<context.strList.at(i).second<<'"'<<std::endl;
+        }
+    }
     myfile<<".data"<<std::endl;
     myfile<<"ONE_Double:    .double 1.0"<<std::endl;
     myfile<<"ONE_Float:     .float 1.0"<<std::endl;

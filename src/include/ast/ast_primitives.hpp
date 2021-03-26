@@ -694,4 +694,30 @@ class OneCharacter : public Program {
         }
 };
 
+class StringLiterals : public Program {
+    private:
+        std::string str;
+    public:
+        StringLiterals(std::string *_str) : str(*_str)  {
+            delete _str;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<str;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string data = str.substr(1,str.length()-2);
+            data.append("\000");
+            std::string strLabel = makeLabel("STRING");
+            context->strList.push_back(std::pair<std::string,std::string>(strLabel,data));  // label : string data
+            context->isStrLiteral=1;
+            context->strLiteralLength=data.length();
+            file<<"lui "<<destReg<<", %hi("<<strLabel<<")"<<std::endl;
+            file<<"addiu "<<destReg<<", "<<destReg<<", %lo("<<strLabel<<")"<<std::endl;
+
+            // std::cout<<data.length()<<std::endl;
+        }
+};
+
 #endif

@@ -72,6 +72,7 @@ struct Context {
     varInfo *vfPointer=nullptr;
     structInfo *stPointer=nullptr;
     std::list<std::string> Case_label;
+    std::vector<std::pair<std::string,std::string>> strList;
     int isFunc=0;
     int isLoop=0;
     int isSwitch=0;
@@ -82,6 +83,8 @@ struct Context {
     long indexCounter=0;
     long elementNumBytes=1;
     int totalArgCount = 0;
+    int isStrLiteral=0;
+    long strLiteralLength=0;
 };
 
 #endif
