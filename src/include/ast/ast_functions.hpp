@@ -83,7 +83,7 @@ class FunctionDefArgs : public FunctionArgs {
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
             context->ftEntry->second.argList.push_back(vf);
             if(context->ArgCount<4) {
-                if(vf.numBytes==1)  {
+                if(vf.numBytes==1 && vf.isPtr==0)  {
                     file<<"sb $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
                 }
                 else    {
