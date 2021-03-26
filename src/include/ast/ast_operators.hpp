@@ -574,18 +574,24 @@ class RefOperator : public Operator {
             return 1;
         }
 
-
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             long offset = getLeft()->getOffset(context);
-            if (getLeft()->getVarType(context) == "int" || getLeft()->getVarType(context) == "float"){
-                context->tempVarInfo.numBytes =4;
-            } else if(getLeft()->getVarType(context) == "char" ){
-                context->tempVarInfo.numBytes =1;
-            } else if(getLeft()->getVarType(context) == "double"){
-                context->tempVarInfo.numBytes =8;
+            std::unordered_map<std::string,structInfo>::iterator it;
+            it=context->structTable.find(getLeft()->getVarType(context));
+            if(it!=context->structTable.end())    {                                 // if Left is a struct
+                file<<"lw "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
+                context->tempVarInfo.numBytes = it->second.size;
+                return;
             }
-            context->tempVarInfo.isPtr = 1;
-            file<<"addiu "<<std::string(destReg)<<", $sp, "<<offset<<std::endl;
+            else    {
+                if (getLeft()->getVarType(context) == "int" ){
+                    context->tempVarInfo.numBytes =4;
+                } else if(getLeft()->getVarType(context) == "char" ){
+                    context->tempVarInfo.numBytes =1;
+                }
+                context->tempVarInfo.isPtr = 1;
+                file<<"addiu "<<std::string(destReg)<<", $sp, "<<offset<<std::endl;
+            }            
         }
 };
 

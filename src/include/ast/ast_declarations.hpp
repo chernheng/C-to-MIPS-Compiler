@@ -66,7 +66,7 @@ class DeclareVariable : public Program {
             if(init!=nullptr)   {
                 tmp += init->spaceRequired(context);
             }
-            if(context->structTable.find(t)!=context->structTable.end())    {   // struct instance needs 4 more bytes for pointer
+            if(context->structTable.find(t)!=context->structTable.end() && ptr==0)    {   // struct instance needs 4 more bytes for base pointer
                 tmp+=4;
             }
             return tmp;
