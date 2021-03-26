@@ -185,6 +185,11 @@ class DeclareVariable : public Program {
                     vf.offset+=4;
                 }
             }
+            if(init==nullptr){
+                if (vf.numBytes==8){
+                    vf.offset+=4;
+                }
+            }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));
             if (std::string(destReg)!="$f0"){
                 file<<"li "<<std::string(destReg)<<", 1"<<std::endl;
