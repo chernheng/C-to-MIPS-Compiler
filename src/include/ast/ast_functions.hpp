@@ -46,7 +46,10 @@ class FunctionDefArgs : public FunctionArgs {
 
         virtual long spaceRequired(Context *context) const override {
             long tmp=0;
-            if(type=="int" || type=="char")  {
+            if(ptr==1)  {
+                tmp=4;
+            }
+            else if(type=="int" || type=="char")  {
                 tmp=4;
             }
             if(next!=nullptr)   {
@@ -69,18 +72,23 @@ class FunctionDefArgs : public FunctionArgs {
             vf.offset=delta;
             vf.type=type;
             vf.isPtr = ptr;
-            if(type=="int") {
-                vf.length=1;
-                vf.numBytes=4;
-            }
-            else if(type=="char")   {
+            if(type=="char")   {
                 vf.length=1;
                 vf.numBytes=1;
+            }
+            else    {
+                vf.length=1;
+                vf.numBytes=4;
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(id,vf));
             context->ftEntry->second.argList.push_back(vf);
             if(context->ArgCount<4) {
-                file<<"sw $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                if(vf.numBytes==1)  {
+                    file<<"sb $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                }
+                else    {
+                    file<<"sw $a"<<context->ArgCount<<", "<<(context->stack.size - delta)<<"($sp)"<<std::endl;
+                }                
             }
             context->ArgCount++;
             if(next!=nullptr)   {
