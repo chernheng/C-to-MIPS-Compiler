@@ -803,49 +803,62 @@ class IncOperator : public Operator {   // i++
             getLeft()->print(dst);
             dst<<"++";
         }
-
-
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             std::string type = getLeft()->getVarType(context);
-            if (type == "double" || type == "float"){
+            int ptr = getLeft()->getPointer(context);
+            if ((type == "double" || type == "float")&& ptr == 0){
                 getLeft()->generate(file, "$f6", context);
                 if (type == "float"){
                     file<<"l.s $f8, ONE_Float"<<std::endl;
                     file<<"add.s $f8, $f6, $f8"<<std::endl;
-                    file<<"s.s $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.s $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.s $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
                     file<<"mov.s "<<std::string(destReg)<<", $f6"<<std::endl;
                 } else if(type == "double"){
                     file<<"l.d $f8, ONE_Double"<<std::endl;
                     file<<"add.d $f8, $f6, $f8"<<std::endl;
-                    file<<"s.d $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.d $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.d $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
                     file<<"mov.d "<<std::string(destReg)<<", $f6"<<std::endl;
                 }
             } else{
-            getLeft()->generate(file, "$t0", context);
-            if(context->tempVarInfo.isPtr==1){
-                file<<"addiu $t1, $t0, "<<context->tempVarInfo.numBytes<<std::endl;
-            }else {
-                file<<"addiu $t1, $t0, 1"<<std::endl;
-            }
-
-            if(context->tempVarInfo.derefPtr==1){
-                file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t1, 0($t0)"<<std::endl;
+                getLeft()->generate(file, "$t0", context);
+                if(context->tempVarInfo.isPtr==1){
+                    if (context->tempVarInfo.type == "double"){
+                        file<<"addiu $t1, $t0, 8"<<std::endl;
+                    } else {
+                        file<<"addiu $t1, $t0, "<<context->tempVarInfo.numBytes<<std::endl;
+                    }
+                }else {
+                    file<<"addiu $t1, $t0, 1"<<std::endl;
                 }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t1, 0($t0)"<<std::endl;
+                if(context->tempVarInfo.derefPtr==1){
+                    file<<"lw $t2, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    if(getLeft()->getVarType(context)=="int")  {
+                        file<<"sw $t1, 0($t2)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t1, 0($t2)"<<std::endl;
+                    }
+                } else { 
+                    if(getLeft()->getVarType(context)=="int"||getLeft()->getVarType(context)=="float"||getLeft()->getVarType(context)=="double")  {
+                        file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
                 }
-            } else { 
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                if (std::string(destReg)!="$f0"){
+                    file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
                 }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                }
-            }
-            getLeft()->generate(file, "$t0", context);
-            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
             }
         }
 };
@@ -865,30 +878,87 @@ class DecOperator : public Operator {   // i--
 
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            getLeft()->generate(file, "$t0", context);
-            if(context->tempVarInfo.isPtr==1){
-                file<<"addiu $t1, $t0, -"<<context->tempVarInfo.numBytes<<std::endl;
-            }else {
-                file<<"addiu $t1, $t0, -1"<<std::endl;
+            std::string type = getLeft()->getVarType(context);
+            int ptr = getLeft()->getPointer(context);
+            if ((type == "double" || type == "float")&& ptr == 0){
+                getLeft()->generate(file, "$f6", context);
+                if (type == "float"){
+                    file<<"l.s $f8, ONE_Float"<<std::endl;
+                    file<<"sub.s $f8, $f6, $f8"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.s $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.s $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    file<<"mov.s "<<std::string(destReg)<<", $f6"<<std::endl;
+                } else if(type == "double"){
+                    file<<"l.d $f8, ONE_Double"<<std::endl;
+                    file<<"sub.d $f8, $f6, $f8"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.d $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.d $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    file<<"mov.d "<<std::string(destReg)<<", $f6"<<std::endl;
+                }
+            } else{
+                getLeft()->generate(file, "$t0", context);
+                if(context->tempVarInfo.isPtr==1){
+                    if (context->tempVarInfo.type == "double"){
+                        file<<"addiu $t1, $t0, -8"<<std::endl;
+                    } else {
+                        file<<"addiu $t1, $t0, -"<<context->tempVarInfo.numBytes<<std::endl;
+                    }
+                }else {
+                    file<<"addiu $t1, $t0, -1"<<std::endl;
+                }
+                if(context->tempVarInfo.derefPtr==1){
+                    file<<"lw $t2, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    if(getLeft()->getVarType(context)=="int")  {
+                        file<<"sw $t1, 0($t2)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t1, 0($t2)"<<std::endl;
+                    }
+                } else { 
+                    if(getLeft()->getVarType(context)=="int"||getLeft()->getVarType(context)=="float"||getLeft()->getVarType(context)=="double")  {
+                        file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                }
+                if (std::string(destReg)!="$f0"){
+                    file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+                }
             }
-            if(context->tempVarInfo.derefPtr==1){
-                file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t1, 0($t0)"<<std::endl;
-                }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t1, 0($t0)"<<std::endl;
-                }
-            } else { 
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                }
-            }
-            getLeft()->generate(file, "$t0", context);
-            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+
+        //     getLeft()->generate(file, "$t0", context);
+        //     if(context->tempVarInfo.isPtr==1){
+        //         file<<"addiu $t1, $t0, -"<<context->tempVarInfo.numBytes<<std::endl;
+        //     }else {
+        //         file<<"addiu $t1, $t0, -1"<<std::endl;
+        //     }
+        //     if(context->tempVarInfo.derefPtr==1){
+        //         file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+        //         if(getLeft()->getVarType(context)=="int")  {
+        //             file<<"sw $t1, 0($t0)"<<std::endl;
+        //         }
+        //         else if(getLeft()->getVarType(context)=="char")    {
+        //             file<<"sb $t1, 0($t0)"<<std::endl;
+        //         }
+        //     } else { 
+        //         if(getLeft()->getVarType(context)=="int")  {
+        //             file<<"sw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+        //         }
+        //         else if(getLeft()->getVarType(context)=="char")    {
+        //             file<<"sb $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+        //         }
+        //     }
+        //     getLeft()->generate(file, "$t0", context);
+        //     file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -906,29 +976,62 @@ class IncAfterOperator : public Operator {   // ++i
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            getLeft()->generate(file, "$t0", context);
-            if(context->tempVarInfo.isPtr==1){
-                file<<"addiu $t0, $t0, "<<context->tempVarInfo.numBytes<<std::endl;
-            }else {
-                file<<"addiu $t0, $t0, 1"<<std::endl;
+            std::string type = getLeft()->getVarType(context);
+            int ptr = getLeft()->getPointer(context);
+            if ((type == "double" || type == "float")&& ptr == 0){
+                getLeft()->generate(file, "$f6", context);
+                if (type == "float"){
+                    file<<"l.s $f8, ONE_Float"<<std::endl;
+                    file<<"add.s $f8, $f6, $f8"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.s $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.s $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    file<<"mov.s "<<std::string(destReg)<<", $f6"<<std::endl;
+                } else if(type == "double"){
+                    file<<"l.d $f8, ONE_Double"<<std::endl;
+                    file<<"add.d $f8, $f6, $f8"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.d $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.d $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    file<<"mov.d "<<std::string(destReg)<<", $f8"<<std::endl;
+                }
+            } else{
+                getLeft()->generate(file, "$t0", context);
+                if(context->tempVarInfo.isPtr==1){
+                    if (context->tempVarInfo.type == "double"){
+                        file<<"addiu $t0, $t0, 8"<<std::endl;
+                    } else {
+                        file<<"addiu $t0, $t0, "<<context->tempVarInfo.numBytes<<std::endl;
+                    }
+                }else {
+                    file<<"addiu $t0, $t0, 1"<<std::endl;
+                }
+                if(context->tempVarInfo.derefPtr==1){
+                    file<<"lw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    if(getLeft()->getVarType(context)=="int")  {
+                        file<<"sw $t0, 0($t1)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t0, 0($t1)"<<std::endl;
+                    }
+                } else { 
+                    if(getLeft()->getVarType(context)=="int"||getLeft()->getVarType(context)=="float"||getLeft()->getVarType(context)=="double")  {
+                        file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                }
+                if (std::string(destReg)!="$f0"){
+                    file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+                }
             }
-            if(context->tempVarInfo.derefPtr==1){
-                file<<"lw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t0, 0($t1)"<<std::endl;
-                }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t0, 0($t1)"<<std::endl;
-                }
-            } else { 
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                }
-            }
-            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
@@ -946,29 +1049,62 @@ class DecAfterOperator : public Operator {   // --i
         }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            getLeft()->generate(file, "$t0", context);
-            if(context->tempVarInfo.isPtr==1){
-                file<<"addiu $t0, $t0, -"<<context->tempVarInfo.numBytes<<std::endl;
-            }else {
-                file<<"addiu $t0, $t0, -1"<<std::endl;
+            std::string type = getLeft()->getVarType(context);
+            int ptr = getLeft()->getPointer(context);
+            if ((type == "double" || type == "float")&& ptr == 0){
+                getLeft()->generate(file, "$f6", context);
+                if (type == "float"){
+                    file<<"l.s $f8, ONE_Float"<<std::endl;
+                    file<<"sub.s $f8, $f6, $f8"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.s $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.s $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    file<<"mov.s "<<std::string(destReg)<<", $f6"<<std::endl;
+                } else if(type == "double"){
+                    file<<"l.d $f8, ONE_Double"<<std::endl;
+                    file<<"sub.d $f8, $f6, $f8"<<std::endl;
+                    if (context->tempVarInfo.derefPtr==1){
+                        file<<"lw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                        file<<"s.d $f8, 0($t0)"<<std::endl;
+                    } else {
+                        file<<"s.d $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    file<<"mov.d "<<std::string(destReg)<<", $f8"<<std::endl;
+                }
+            } else{
+                getLeft()->generate(file, "$t0", context);
+                if(context->tempVarInfo.isPtr==1){
+                    if (context->tempVarInfo.type == "double"){
+                        file<<"addiu $t0, $t0, -8"<<std::endl;
+                    } else {
+                        file<<"addiu $t0, $t0, -"<<context->tempVarInfo.numBytes<<std::endl;
+                    }
+                }else {
+                    file<<"addiu $t0, $t0, -1"<<std::endl;
+                }
+                if(context->tempVarInfo.derefPtr==1){
+                    file<<"lw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    if(getLeft()->getVarType(context)=="int")  {
+                        file<<"sw $t0, 0($t1)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t0, 0($t1)"<<std::endl;
+                    }
+                } else { 
+                    if(getLeft()->getVarType(context)=="int"||getLeft()->getVarType(context)=="float"||getLeft()->getVarType(context)=="double")  {
+                        file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                    else if(getLeft()->getVarType(context)=="char")    {
+                        file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    }
+                }
+                if (std::string(destReg)!="$f0"){
+                    file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+                }
             }
-            if(context->tempVarInfo.derefPtr==1){
-                file<<"lw $t1, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t0, 0($t1)"<<std::endl;
-                }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t0, 0($t1)"<<std::endl;
-                }
-            } else { 
-                if(getLeft()->getVarType(context)=="int")  {
-                    file<<"sw $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                }
-                else if(getLeft()->getVarType(context)=="char")    {
-                    file<<"sb $t0, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
-                }
-            }
-            file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
         }
 };
 
