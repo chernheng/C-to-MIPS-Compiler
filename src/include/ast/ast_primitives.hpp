@@ -677,4 +677,22 @@ class StructStore : public Program {
         }
 };
 
+class OneCharacter : public Program {
+    private:
+        std::string chr;
+    public:
+        OneCharacter(std::string *_chr) : chr(*_chr) {
+            delete _chr;
+        }
+
+        virtual void print(std::ostream &dst) const override    {
+            dst<<chr;
+        }
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            int value = chr.substr(1,1).c_str()[0];
+            file<<"li "<<std::string(destReg)<<", "<<value<<std::endl;
+        }
+};
+
 #endif
