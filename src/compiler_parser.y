@@ -261,6 +261,7 @@ NEG : FACTOR       { $$ = $1; }
     | NEG OP_DEC {$$ = new DecOperator($1);}
     | OP_INC NEG {$$ = new IncAfterOperator($2);}
     | OP_DEC NEG {$$ = new DecAfterOperator($2);}
+    | NEG OP_SPOINT STRUCT_ELEMENT     { $$ = new PointerArrowRead($1,$3); }
 
 FACTOR : VARIABLE     { $$ = $1; }    // variable
        | NUMBER   { $$ = new Number($1); }      // number

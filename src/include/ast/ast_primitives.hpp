@@ -546,6 +546,7 @@ class AccessStructElement : public Program {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {   // gets offset of element relative to struct base
             std::unordered_map<std::string,varInfo>::iterator it1;
             it1 = context->stPointer->structElements.find(id);
+            context->tempVarInfo.type=it1->second.type;
             context->tempVarInfo.numBytes *= it1->second.numBytes;
             if(it1->second.isPtr > context->tempVarInfo.isPtr)  {
                 context->tempVarInfo.isPtr = it1->second.isPtr;
@@ -553,7 +554,7 @@ class AccessStructElement : public Program {
             if(it1->second.isUnsigned > context->tempVarInfo.isUnsigned)    {
                 context->tempVarInfo.isUnsigned= it1->second.isUnsigned;
             }
-            file<<"addiu "<<std::string(destReg)<<", "<<it1->second.offset<<std::endl;
+            file<<"addiu "<<std::string(destReg)<<", "<<std::string(destReg)<<", "<<it1->second.offset<<std::endl;
             if(next!=nullptr)   {
                 next->generate(file, destReg, context);
             }

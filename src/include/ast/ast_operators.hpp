@@ -1108,4 +1108,36 @@ class DecAfterOperator : public Operator {   // --i
         }
 };
 
+class PointerArrowRead : public Operator {
+    protected:
+        virtual const char* getOpcode() const override {
+            return "->";
+        }
+    public:
+        PointerArrowRead(ProgramPtr _id, ProgramPtr _ele) : Operator(_id, _ele) {}
+
+        virtual void generate(std::ofstream &file, const char* destReg, Context*context) const override {
+            varInfo initTempVF = context->tempVarInfo;
+            file<<"move $t3, $zero"<<std::endl;
+            getLeft()->generate(file, "$t3", context);      // store struct base pointer into $t3
+            context->stPointer = &context->structTable.find(context->tempVarInfo.type)->second;
+            context->tempVarInfo.numBytes=1;
+            context->tempVarInfo.isPtr=0;
+            context->tempVarInfo.isUnsigned=0;
+            getRight()->generate(file, "$t3", context);     // add element offset to struct base pointer
+            if(context->tempVarInfo.numBytes==1 && context->tempVarInfo.isPtr==0)   {
+                if(context->tempVarInfo.isUnsigned==1)  {
+                    file<<"lbu "<<std::string(destReg)<<", 0($t3)"<<std::endl;
+                }
+                else    {
+                    file<<"lb "<<std::string(destReg)<<", 0($t3)"<<std::endl;
+                }
+            }
+            else    {
+                file<<"lw "<<std::string(destReg)<<", 0($t3)"<<std::endl;
+            }
+            context->tempVarInfo = initTempVF;
+        }
+};
+
 #endif
