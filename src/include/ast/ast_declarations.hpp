@@ -174,14 +174,15 @@ class DeclareVariable : public Program {
             }
 
             if((init!=nullptr)&&(size!=1)&&(vf.isFP ==1)&&vf.isPtr==0)   { //floating point, non global, not pointer
+                init->generate(file,"$f10",context);
                 varInfo temp = context->FP.back();
                 vf.FP_label = temp.FP_label;
                 vf.FP_value = temp.FP_value;
-                init->generate(file,"$f10",context);
                 if(vf.numBytes==4){
                     file<<"s.s $f10, "<<(context->stack.size - offset)<<"($sp)"<<std::endl;
                 }else if(vf.numBytes==8){
                     file<<"s.d $f10, "<<(context->stack.size - offset-4)<<"($sp)"<<std::endl;
+                    vf.offset+=4;
                 }
             }
             context->stack.lut.back().insert(std::pair<std::string,varInfo>(getID(),vf));

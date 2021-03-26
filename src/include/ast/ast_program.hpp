@@ -19,6 +19,10 @@ class Program {
             return "";
         }
 
+        virtual int getPointer(Context *context) const {
+            return 0;
+        }
+
         virtual long spaceRequired(Context *context) const  {
             return 0;
         }

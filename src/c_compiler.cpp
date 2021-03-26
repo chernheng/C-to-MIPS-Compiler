@@ -21,6 +21,9 @@ int main(int argc, char** argv)
     // myfile<<".text"<<std::endl;
     ast->print(std::cout);
     ast->generate(myfile,"$v0",&context);
+    myfile<<".data"<<std::endl;
+    myfile<<"ONE_Double:    .double 1.0"<<std::endl;
+    myfile<<"ONE_Float:     .float 1.0"<<std::endl;
     std::cout<<"done compiling"<<std::endl;
     myfile.close();
     std::cout<<std::endl;

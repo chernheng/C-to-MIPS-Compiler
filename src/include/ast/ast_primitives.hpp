@@ -29,6 +29,19 @@ class Variable : public Program {
             return 0;
         }
 
+        virtual int getPointer(Context *context) const override  {  // returns offset from current $sp
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
+                    int pointer = it->second.isPtr;
+                    return pointer;
+                }
+            }
+            return 0;
+        }
+
         virtual std::string getVarType(Context *context) const override {
             std::unordered_map<std::string,varInfo>::iterator it;
             int n=context->stack.lut.size()-1;
@@ -62,7 +75,7 @@ class Variable : public Program {
                                 file<<"l.s "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                             }
                             if(it->second.numBytes == 8){
-                                file<<"l.d "<<std::string(destReg)<<", "<<offset-4<<"($sp)"<<std::endl;
+                                file<<"l.d "<<std::string(destReg)<<", "<<offset<<"($sp)"<<std::endl;
                             }
                         }
                         else if(it->second.numBytes==1)    {
@@ -119,6 +132,33 @@ class VariableStore : public Program {  // store vale into variable
         int getPtr() const{
             return ptr;
         }
+        virtual int getPointer(Context *context) const override  {  // returns offset from current $sp
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   {
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) {
+                    int pointer = it->second.isPtr;
+                    if (ptr == 1){
+                        return 0;
+                    }
+                    return pointer;
+                }
+            }
+            return 0;
+        }
+        virtual std::string getVarType(Context *context) const override {
+            std::unordered_map<std::string,varInfo>::iterator it;
+            int n=context->stack.lut.size()-1;
+            for(int i=n;i>=0;i--)   { //iterating through the vector of maps from the last map as it is the latest scope
+                it=context->stack.lut.at(i).find(getID());
+                if(it!=context->stack.lut.at(i).end()) { // iterating through each map, and if cant be found, move on ot next map
+                    return it->second.type;
+                }
+            }
+            return "";
+        }
+        
 
         virtual void print(std::ostream &dst) const override    {
             if (getPtr() == 1){
@@ -137,11 +177,11 @@ class VariableStore : public Program {  // store vale into variable
                     if(i>0)    { //not global (write to local variable)
                         long offset = context->stack.size - it->second.offset;
                         if (getPtr()==0){
-                            if(it->second.isFP == 1){
+                            if(it->second.isFP == 1 && it->second.isPtr == 0){
                                 if (it->second.numBytes == 4){
                                     file <<"s.s "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                                 } else if(it->second.numBytes == 8) {
-                                    file <<"s.d "<<destReg<<", "<<(context->stack.size - it->second.offset-4)<<"($sp)"<<std::endl;
+                                    file <<"s.d "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                                 }
                             }else if(it->second.numBytes==1)    {
                                 file<<"sb "<<destReg<<", "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
@@ -153,8 +193,17 @@ class VariableStore : public Program {  // store vale into variable
                             if(it->second.numBytes==1)    {
                                 file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                                 file<<"sb "<<destReg<<", 0($t1)"<<std::endl;
+                            } 
+                            else if(it->second.isFP == 1){
+                                if (it->second.type == "float"){
+                                    file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                                    file <<"s.s "<<destReg<<", 0($t1)"<<std::endl;
+                                } else if(it->second.type =="double") {
+                                    file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
+                                    file <<"s.d "<<destReg<<", 0($t1)"<<std::endl;
+                                }
                             }
-                            else    {
+                            else  {
                                 file<<"lw $t1, "<<(context->stack.size - it->second.offset)<<"($sp)"<<std::endl;
                                 file<<"sw "<<destReg<<", 0($t1)"<<std::endl;
                             }
@@ -391,6 +440,9 @@ class Float : public Program {
         std::string getValue() const    {
             return value;
         }
+        virtual std::string getVarType(Context *context) const override {
+            return "float";
+        }
 
         virtual void print(std::ostream &dst) const override    {
             dst<<getValue();
@@ -422,6 +474,10 @@ class Double : public Program {
 
         std::string getValue() const    {
             return value;
+        }
+
+        virtual std::string getVarType(Context *context) const override {
+            return "double";
         }
 
         virtual void print(std::ostream &dst) const override    {

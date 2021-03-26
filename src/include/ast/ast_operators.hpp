@@ -58,8 +58,15 @@ class AssignmentOperator : public Operator {
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             // long offset=getLeft()->getOffset(context);
             // std::string t=getLeft()->getVarType(context);
-            getRight()->generate(file, destReg, context);
-            getLeft()->generate(file, destReg, context);
+            int ptr_left = getLeft()->getPointer(context);
+            std::string type = getLeft()->getVarType(context);
+            if (ptr_left == 0 && (type=="float" || type=="double")){
+                getRight()->generate(file, "$f4", context);
+                getLeft()->generate(file, "$f4",context);
+            } else {
+                getRight()->generate(file, "$t0", context);
+                getLeft()->generate(file, "$t0", context);
+            }
             // if(t=="int")    {
             //     file<<"sw $t0, "<<offset<<"($sp)"<<std::endl;
             // }
@@ -279,46 +286,75 @@ class AddOperator : public Operator {
         AddOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            // if (context->tempVarInfo.isFP == 1){
-            //     getLeft()->generate(file, "$f6", context);
-            //     long ofs = context->stack.slider;
-            //     if (context->tempVarInfo.numBytes == 4){
-            //         file<<"l.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-            //         context->stack.slider+=4;
-            //     } else if(context->tempVarInfo.numBytes == 8){
-            //         file<<"l.d $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-            //         context->stack.slider+=8;
-            //     }
-            // }
+            std::string type = getLeft()->getVarType(context);
+            int ptr_left = getLeft()->getPointer(context);
+            int ptr_right = getRight()->getPointer(context);
+            if (ptr_left == 1 || ptr_right == 1){
+                getLeft()->generate(file, "$t1", context);
+                long ofs = context->stack.slider;
+                file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                context->stack.slider+=4;
+                varInfo varLeft = context->tempVarInfo;
+                getRight()->generate(file, "$t2", context);
+                varInfo varRight = context->tempVarInfo;
+                if (varLeft.isPtr==1 && varLeft.numBytes > 1) {
+                    if (varLeft.type == "double"){
+                        file<<"li $t3, 8"<<std::endl;
+                    } else {
+                        file<<"li $t3, "<<varLeft.numBytes<<std::endl;
+                    }
+                    file<<"mult $t2, $t3"<<std::endl;
+                    file<<"mflo $t2"<<std::endl;
+                    file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                    context->tempVarInfo = varLeft;
 
-            getLeft()->generate(file, "$t1", context);
-            long ofs = context->stack.slider;
-            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-            context->stack.slider+=4;
-            varInfo varLeft = context->tempVarInfo;
-            getRight()->generate(file, "$t2", context);
-            varInfo varRight = context->tempVarInfo;
-            if (varLeft.isPtr==1 && varLeft.numBytes > 1) {
-                file<<"li $t3, "<<varLeft.numBytes<<std::endl;
-                file<<"mult $t2, $t3"<<std::endl;
-                file<<"mflo $t2"<<std::endl;
-                file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-                context->stack.slider-=4;
-                file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
-                context->tempVarInfo = varLeft;
-
-            } else if(varRight.isPtr==1 && varRight.numBytes > 1) {
-                file<<"li $t3, "<<varRight.numBytes<<std::endl;
-                file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-                file<<"mult $t1, $t3"<<std::endl;
-                file<<"mflo $t1"<<std::endl;
-                context->stack.slider-=4;
-                file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                } else if(varRight.isPtr==1 && varRight.numBytes > 1) {
+                    if (varLeft.type == "double"){
+                        file<<"li $t3, 8"<<std::endl;
+                    } else {
+                        file<<"li $t3, "<<varRight.numBytes<<std::endl;
+                    }
+                    file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    file<<"mult $t1, $t3"<<std::endl;
+                    file<<"mflo $t1"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                }
+            } else if (type == "double" || type == "float"){
+                getLeft()->generate(file, "$f6", context);
+                long ofs = context->stack.slider;
+                if (type == "float"){
+                    file<<"s.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider+=4;
+                } else if(type == "double"){
+                    file<<"s.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider+=8;
+                }
+                getRight()->generate(file, "$f8", context);
+                if (type == "float"){
+                    file<<"l.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"add.s "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                } else if(type == "double"){
+                    file<<"l.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider-=8;
+                    file<<"add.d "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                }
             }else {
+                getLeft()->generate(file, "$t1", context);
+                long ofs = context->stack.slider;
+                file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                context->stack.slider+=4;
+                varInfo varLeft = context->tempVarInfo;
+                getRight()->generate(file, "$t2", context);
+                varInfo varRight = context->tempVarInfo;
                 file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
                 context->stack.slider-=4;
                 file<<"addu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
             }
+
 
         }
 };
@@ -332,22 +368,70 @@ class SubOperator : public Operator {
         SubOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)  {}
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
-            getLeft()->generate(file, "$t1", context);
-            long ofs = context->stack.slider;
-            file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-            context->stack.slider+=4;
-            varInfo varLeft = context->tempVarInfo;
-            getRight()->generate(file, "$t2", context);
-            varInfo varRight = context->tempVarInfo;
-            if (varLeft.isPtr==1 && varLeft.numBytes > 1 && varRight.isPtr==0) {
-                file<<"li $t3, "<<varLeft.numBytes<<std::endl;
-                file<<"mult $t2, $t3"<<std::endl;
-                file<<"mflo $t2"<<std::endl;
-                file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
-                context->stack.slider-=4;
-                file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
-                context->tempVarInfo = varLeft;
-            } else{
+                       std::string type = getLeft()->getVarType(context);
+            int ptr_left = getLeft()->getPointer(context);
+            int ptr_right = getRight()->getPointer(context);
+            if (ptr_left == 1 || ptr_right == 1){
+                getLeft()->generate(file, "$t1", context);
+                long ofs = context->stack.slider;
+                file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                context->stack.slider+=4;
+                varInfo varLeft = context->tempVarInfo;
+                getRight()->generate(file, "$t2", context);
+                varInfo varRight = context->tempVarInfo;
+                if (varLeft.isPtr==1 && varLeft.numBytes > 1) {
+                    if (varLeft.type == "double"){
+                        file<<"li $t3, 8"<<std::endl;
+                    } else {
+                        file<<"li $t3, "<<varLeft.numBytes<<std::endl;
+                    }
+                    file<<"mult $t2, $t3"<<std::endl;
+                    file<<"mflo $t2"<<std::endl;
+                    file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                    context->tempVarInfo = varLeft;
+
+                } else if(varRight.isPtr==1 && varRight.numBytes > 1) {
+                    if (varLeft.type == "double"){
+                        file<<"li $t3, 8"<<std::endl;
+                    } else {
+                        file<<"li $t3, "<<varRight.numBytes<<std::endl;
+                    }
+                    file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    file<<"mult $t1, $t3"<<std::endl;
+                    file<<"mflo $t1"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
+                }
+            } else if (type == "double" || type == "float"){
+                getLeft()->generate(file, "$f6", context);
+                long ofs = context->stack.slider;
+                if (type == "float"){
+                    file<<"s.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider+=4;
+                } else if(type == "double"){
+                    file<<"s.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider+=8;
+                }
+                getRight()->generate(file, "$f8", context);
+                if (type == "float"){
+                    file<<"l.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"sub.s "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                } else if(type == "double"){
+                    file<<"l.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider-=8;
+                    file<<"sub.d "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                }
+            }else {
+                getLeft()->generate(file, "$t1", context);
+                long ofs = context->stack.slider;
+                file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                context->stack.slider+=4;
+                varInfo varLeft = context->tempVarInfo;
+                getRight()->generate(file, "$t2", context);
+                varInfo varRight = context->tempVarInfo;
                 file<<"lw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
                 context->stack.slider-=4;
                 file<<"subu "<<std::string(destReg)<<", $t1, $t2"<<std::endl;
@@ -364,6 +448,30 @@ class MulOperator : public Operator {
         MulOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string type = getLeft()->getVarType(context);
+            if (type == "double" || type == "float"){
+                getLeft()->generate(file, "$f6", context);
+                long ofs = context->stack.slider;
+                if (type == "float"){
+                    file<<"s.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider+=4;
+                } else if(type == "double"){
+                    file<<"s.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider+=8;
+                }
+                varInfo varLeft = context->tempVarInfo;
+                getRight()->generate(file, "$f8", context);
+                varInfo varRight = context->tempVarInfo;
+                if (context->tempVarInfo.numBytes == 4){
+                    file<<"l.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"mul.s "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                } else if(context->tempVarInfo.numBytes == 8){
+                    file<<"l.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider-=8;
+                    file<<"mul.d "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                }
+            }else {
             getLeft()->generate(file, "$t1", context);
             long ofs = context->stack.slider;
             file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
@@ -373,6 +481,7 @@ class MulOperator : public Operator {
             context->stack.slider-=4;
             file<<"mult $t1, $t2"<<std::endl;
             file<<"mflo "<<std::string(destReg)<<std::endl;
+            }
         }
 };
 
@@ -385,6 +494,30 @@ class DivOperator : public Operator {
         DivOperator(ProgramPtr _left, ProgramPtr _right) : Operator(_left,_right)   {}
         
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string type = getLeft()->getVarType(context);
+            if (type == "double" || type == "float"){
+                getLeft()->generate(file, "$f6", context);
+                long ofs = context->stack.slider;
+                if (type == "float"){
+                    file<<"s.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider+=4;
+                } else if(type == "double"){
+                    file<<"s.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider+=8;
+                }
+                varInfo varLeft = context->tempVarInfo;
+                getRight()->generate(file, "$f8", context);
+                varInfo varRight = context->tempVarInfo;
+                if (context->tempVarInfo.numBytes == 4){
+                    file<<"l.s $f6, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
+                    context->stack.slider-=4;
+                    file<<"div.s "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                } else if(context->tempVarInfo.numBytes == 8){
+                    file<<"l.d $f6, "<<(context->stack.size - ofs-4)<<"($sp)"<<std::endl;
+                    context->stack.slider-=8;
+                    file<<"div.d "<<std::string(destReg)<<", $f6, $f8"<<std::endl;
+                }
+            }else {
             getLeft()->generate(file, "$t1", context);
             long ofs = context->stack.slider;
             file<<"sw $t1, "<<(context->stack.size - ofs)<<"($sp)"<<std::endl;
@@ -394,6 +527,7 @@ class DivOperator : public Operator {
             context->stack.slider-=4;
             file<<"div $t1, $t2"<<std::endl;
             file<<"mflo "<<std::string(destReg)<<std::endl;
+            }
         }
 };
 
@@ -432,13 +566,23 @@ class RefOperator : public Operator {
             dst<<"REF";
         }
 
+        virtual std::string getVarType(Context *context) const override {
+            return getLeft()->getVarType(context);
+        }
+
+        virtual int getPointer(Context *context) const override  {  // returns offset from current $sp
+            return 1;
+        }
+
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             long offset = getLeft()->getOffset(context);
-            if (getLeft()->getVarType(context) == "int" ){
+            if (getLeft()->getVarType(context) == "int" || getLeft()->getVarType(context) == "float"){
                 context->tempVarInfo.numBytes =4;
             } else if(getLeft()->getVarType(context) == "char" ){
                 context->tempVarInfo.numBytes =1;
+            } else if(getLeft()->getVarType(context) == "double"){
+                context->tempVarInfo.numBytes =8;
             }
             context->tempVarInfo.isPtr = 1;
             file<<"addiu "<<std::string(destReg)<<", $sp, "<<offset<<std::endl;
@@ -467,6 +611,10 @@ class DerefOperator : public Operator {
             return getLeft()->getOffset(context);
         }
 
+        virtual int getPointer(Context *context) const override  {  // returns offset from current $sp
+            return 0;
+        }
+
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t1", context);
@@ -476,8 +624,12 @@ class DerefOperator : public Operator {
                 file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
             } else if(context->tempVarInfo.type=="char"){
                 file<<"lb "<<std::string(destReg)<<", 0($t1)"<<std::endl;
-            } else {
-                file<<"lw "<<std::string(destReg)<<", 0($t1)"<<std::endl;
+            } else if(context->tempVarInfo.isFP == 1) {
+                if(context->tempVarInfo.type == "float"){
+                    file<<"l.s "<<std::string(destReg)<<", 0($t1)"<<std::endl;
+                } else if (context->tempVarInfo.type == "double"){
+                    file<<"l.d "<<std::string(destReg)<<", 0($t1)"<<std::endl;
+                }
             }
         }
 };
@@ -573,10 +725,23 @@ class NegOperator : public Operator {
             dst<<"-";
             getLeft()->print(dst);
         }
+        virtual std::string getVarType(Context *context) const override {
+            return getLeft()->getVarType(context);
+        }
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string type = getLeft()->getVarType(context);
+            if (type == "double" || type == "float"){
+                getLeft()->generate(file, "$f6", context);
+                if (type == "float"){
+                    file<<"neg.s "<<std::string(destReg)<<", $f6"<<std::endl;
+                } else if(type == "double"){
+                    file<<"neg.d "<<std::string(destReg)<<", $f6"<<std::endl;
+                }
+            }else {
             getLeft()->generate(file, "$t1", context);
             file<<"subu "<<std::string(destReg)<<", $zero, $t1"<<std::endl;
+            }
         }
 };
 
@@ -633,7 +798,23 @@ class IncOperator : public Operator {   // i++
             dst<<"++";
         }
 
+
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
+            std::string type = getLeft()->getVarType(context);
+            if (type == "double" || type == "float"){
+                getLeft()->generate(file, "$f6", context);
+                if (type == "float"){
+                    file<<"l.s $f8, ONE_Float"<<std::endl;
+                    file<<"add.s $f8, $f6, $f8"<<std::endl;
+                    file<<"s.s $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    file<<"mov.s "<<std::string(destReg)<<", $f6"<<std::endl;
+                } else if(type == "double"){
+                    file<<"l.d $f8, ONE_Double"<<std::endl;
+                    file<<"add.d $f8, $f6, $f8"<<std::endl;
+                    file<<"s.d $f8, "<<getLeft()->getOffset(context)<<"($sp)"<<std::endl;
+                    file<<"mov.d "<<std::string(destReg)<<", $f6"<<std::endl;
+                }
+            } else{
             getLeft()->generate(file, "$t0", context);
             if(context->tempVarInfo.isPtr==1){
                 file<<"addiu $t1, $t0, "<<context->tempVarInfo.numBytes<<std::endl;
@@ -659,6 +840,7 @@ class IncOperator : public Operator {   // i++
             }
             getLeft()->generate(file, "$t0", context);
             file<<"move "<<std::string(destReg)<<", $t0"<<std::endl;
+            }
         }
 };
 
@@ -674,6 +856,7 @@ class DecOperator : public Operator {   // i--
             getLeft()->print(dst);
             dst<<"--";
         }
+
 
         virtual void generate(std::ofstream &file, const char* destReg, Context *context) const override    {
             getLeft()->generate(file, "$t0", context);
